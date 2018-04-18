@@ -16,7 +16,7 @@ nav:
 author: '符琼林'
 nickname: ''
 bio: 'iOS开发者，沉迷逆向，喜欢学习新技术'
-avatar: '/assets/img/avatar.jpg'
+avatar: 'https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/icon.jpg'
 
 # Search
 search: true
