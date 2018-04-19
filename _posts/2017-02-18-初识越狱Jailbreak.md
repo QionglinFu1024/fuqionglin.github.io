@@ -2,7 +2,7 @@
 layout: post
 title: '初识越狱 -- Jailbreak '
 subtitle: '越狱 Jailbreak'
-date: 2017-06-18
+date: 2017-02-18
 categories: 技术
 cover: 'https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E9%80%86%E5%90%91/day01/day01-header.jpg'
 tags: 逆向
