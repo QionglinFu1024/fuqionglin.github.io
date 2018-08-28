@@ -221,9 +221,12 @@ frame #3: 0x000000010be0cf66 001--LLDB`-[ViewController bearTest1:](self=0x00007
 (__NSCFConstantString *) str = 0x000000010be0f178 @"熊熊"
 	 $p str = @"2222222";//修改参数
 (NSTaggedPointerString *) $0 = 0xa323232323232327 @"2222222"
+
+$ thread return//代码回滚，直接返回，不在执行后面的代码<up、down只是查看>
 </code></pre>
 
 ### 流程控制
+###### 源码指令级别
 * 继续执行
 $ c continue 
 * 单步运行,将子函数当做整体一步执行
@@ -231,6 +234,94 @@ $ n next
 * 单步运行,遇到子函数会进去
 $ s 
 
+###### 汇编指令级别<control+功能键>
+* si
+* ni 
+
+### 内存断点
+* 对象/属性设置断点，类似KVO
+
+<pre><code class="language-objectivec">$ watchpoint set variable p1->_name
+Watchpoint created: Watchpoint 1: addr = 0x60000022a570 size = 8 state = enabled type = w
+    declare @ '/Users/.../ViewController.m:64'
+    watchpoint spec = 'p1->_name'
+    new value: 0x000000010d25b118
+    
+    触发时打印：
+    Watchpoint 1 hit:
+old value: 0x000000010d25b118
+new value: 0x000000010d25b178
+//查看
+$ po 0x000000010d25b118
+one
+$ po 0x000000010d25b178
+hello
+//调用堆栈
+bt
+* thread #1, queue = 'com.apple.main-thread', stop reason = watchpoint 1
+  * frame #0: 0x000000010db6b4aa libobjc.A.dylib`objc_setProperty_nonatomic_copy + 47
+    frame #1: 0x000000010d259597 001--LLDB`-[Person setName:](self=0x000060000022a560, _cmd="setName:", name=@"hello") at Person.h:12
+    frame #2: 0x000000010d2593dc 001--LLDB`-[ViewController touchesBegan:withEvent:](self=0x00007fa4b3419080, _cmd="touchesBegan:withEvent:", touches=1 element, event=0x0000604000108040) at ViewController.m:87
+    frame #3: 0x000000010eb72767 UIKit`forwardTouchMethod + 340
+    frame #4: 0x000000010eb72602 UIKit`-[UIResponder touchesBegan:withEvent:] + 49
+    frame #5: 0x000000010e9bae1a UIKit`-[UIWindow _sendTouchesForEvent:] + 2052
+    frame #6: 0x000000010e9bc7c1 UIKit`-[UIWindow sendEvent:] + 4086
+    frame #7: 0x000000010e960310 UIKit`-[UIApplication sendEvent:] + 352
+    frame #8: 0x000000010f2a16af UIKit`__dispatchPreprocessedEventFromEventQueue + 2796
+    frame #9: 0x000000010f2a42c4 UIKit`__handleEventQueueInternal + 5949
+    frame #10: 0x000000010e46abb1 CoreFoundation`__CFRUNLOOP_IS_CALLING_OUT_TO_A_SOURCE0_PERFORM_FUNCTION__ + 17
+    frame #11: 0x000000010e44f4af CoreFoundation`__CFRunLoopDoSources0 + 271
+    frame #12: 0x000000010e44ea6f CoreFoundation`__CFRunLoopRun + 1263
+    frame #13: 0x000000010e44e30b CoreFoundation`CFRunLoopRunSpecific + 635
+    frame #14: 0x000000011363ca73 GraphicsServices`GSEventRunModal + 62
+    frame #15: 0x000000010e945057 UIKit`UIApplicationMain + 159
+    frame #16: 0x000000010d25950f 001--LLDB`main(argc=1, argv=0x00007ffee29a6038) at main.m:14
+    frame #17: 0x0000000111f25955 libdyld.dylib`start + 1
+    frame #18: 0x0000000111f25955 libdyld.dylib`start + 1
+
+</code></pre>
+
+* 通过内存地址设置
+
+<pre><code class="language-objectivec">$ frame variable 
+(ViewController *) self = 0x00007fdfd5d16020
+(SEL) _cmd = "viewDidLoad"
+(Person *) p1 = 0x000060400003dd00
+(Person *) p2 = 0x4089600000000000
+(Person *) p3 = nil
+$ p &p1->_name
+(NSString **) $0 = 0x000060400003dd10
+$ watchpoint set expression 0x000060400003dd10
+Watchpoint created: Watchpoint 1: addr = 0x60400003dd10 size = 8 state = enabled type = w
+    new value: 4482445592
+$ watchpoint list
+Number of supported hardware watchpoints: 4
+Current watchpoints:
+Watchpoint 1: addr = 0x60400003dd10 size = 8 state = enabled type = w
+    new value: 4482445592
+$ watchpoint delete
+About to delete all watchpoints, do you want to do that?: [Y/n] y
+All watchpoints removed. (1 watchpoints)
+</code></pre>
+
+* 给断点设置默认指令
+
+<pre><code class="language-objectivec">$ break command add 2//2为断点编号
+Enter your debugger command(s).  Type 'DONE' to end.
+> po self
+> p self.view
+> DONE
+
+$ break command list 2//查看
+Breakpoint 2:
+    Breakpoint commands:
+      po self
+      p self.view
+      
+$ breakpoint command delete 2//删除
+$ break command list 2 
+Breakpoint 2 does not have an associated command.
+</code></pre>
 ### stop-hook
 让你在每次stop的时候去执行一些命令,只对breadpoint,watchpoint
 

@@ -1,8 +1,8 @@
 ---
 layout: post
-title: 'Hello Jekyll'
+title: '熊呀大熊呀'
 date: 2017-04-18
-author: Jekyll
+author: 熊熊熊
 cover: 'http://on2171g4d.bkt.clouddn.com/jekyll-banner.png'
 tags: jekyll
 ---
