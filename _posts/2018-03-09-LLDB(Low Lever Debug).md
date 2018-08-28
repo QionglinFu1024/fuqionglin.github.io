@@ -322,16 +322,77 @@ $ breakpoint command delete 2//删除
 $ break command list 2 
 Breakpoint 2 does not have an associated command.
 </code></pre>
+
 ### stop-hook
-让你在每次stop的时候去执行一些命令,只对breadpoint,watchpoint
 
+让你在**每次**stop的时候去执行一些命令,只对breadpoint,watchpoint生效,可以设置多个方法
 
+* 被动触发，只要触发某一个断点，就执行某条指令
+
+>点击pause、debugView不会触发stop-hook
+
+<pre><code class="language-objectivec">//设置断点
+$ target stop-hook add -o "frame variable"
+Stop hook #1 added.
+//触发<每个断点都会调用>
+(ViewController *) self = 0x00007fea48e1cc50
+(SEL) _cmd = "touchesBegan:withEvent:"
+(__NSSetM *) touches = 0x0000604000425480 1 element
+(UITouchesEvent *) event = 0x0000604000110080
+
+//查看
+$ target stop-hook list
+Hook: 1
+  State: enabled
+  Commands: 
+    frame variable
+    
+//删除
+$ target stop-hook delete
+Delete all stop hooks?: [Y/n] y
+
+$ undisplay 6//直接干掉某一组的hook
+$ target stop-hook list
+No stop hooks.
+</code></pre>
+
+* LLDB 配置文件 .lldibinit
+
+### image 库
+* image lookup查看crash内存信息
+
+<pre><code class="language-objectivec">First throw call stack:
+$image lookup -a 0x000000010140b7b1
+      Address: CoreFoundation[0x000000000012a7b1] (CoreFoundation.__TEXT.__text + 1218097)
+      Summary: CoreFoundation`-[__NSArrayM objectAtIndexedSubscript:] + 177
+$ image lookup -a 0x000000010016b3b0
+      Address: 001--LLDB[0x00000001000013b0] (001--LLDB.__TEXT.__text + 1696)
+      Summary: 001--LLDB`-[ViewController touchesBegan:withEvent:] + 128 at ViewController.m:89
+</code></pre>
+
+<pre><code class="language-objectivec">//快速查看这个类
+$ image lookup -t Person
+Best match found in /Users/....:
+id = {0x30000002b}, name = "Person", byte-size = 24, decl = Person.h:11, compiler_type = "@interface Person : NSObject{
+    int _age;
+    NSString * _name;
+}
+@property ( getter = name,setter = setName:,readwrite,copy,nonatomic ) NSString * name;
+@property ( getter = age,setter = setAge:,assign,readwrite,nonatomic ) int age;
+@end"
+
+$ image list
+[  0] 9695BE85-B2BE-317C-AE8D-389B39354E5C 0x000000010a21e000 /Users/qionglinfu/Library/Developer/Xcode/DerivedData/001--LLDB-dieopvroaffgbqbdxajfdgsvjnat/Build/Products/Debug-iphonesimulator/001--LLDB.app/001--LLDB 
+[  1] 8A72DE9C-A136-3506-AA02-4BA2B82DCAF3 0x000000010abe4000 /usr/lib/dyld 
+...
+[231] __lldb_caller_function 
+</code></pre>
 
 ### 常用命令
 * image list 
 * p expression的简写 执行代码
-* b -[xxx xxx]
-* x 
-* register read
-* po
+* b -[xxx类 xxx方法] 断点
+* x memory read的缩写
+* register read 寄存器
+* po 
 
