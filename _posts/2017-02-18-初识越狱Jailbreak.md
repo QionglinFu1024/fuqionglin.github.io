@@ -44,7 +44,7 @@ tags: 逆向
 	- 一般较新的系统版本，均为不完美越狱
 
 - 越狱方法推荐
-	- PP助手：http://jailbreak.25pp.com/
+    - [PP助手](http://jailbreak.25pp.com/)
 
 ### 如何判断是否越狱成功？
 - 桌面是否有Cydia
@@ -78,26 +78,26 @@ tags: 逆向
 	- 可以访问整个iOS设备的文件系统
 	- 类似的补丁还有：afc2、afc2add
 - 软件源
-	- http://apt.saurik.com
-	- http://apt.25pp.com
+	- [http://apt.saurik.com](http://apt.saurik.com)
+	- [http://apt.25pp.com](http://apt.25pp.com)
 
 ### AppSync Unified
 - AppSync Unified补丁的作用
 	- 可以绕过系统验证，随意安装、运行破解的ipa安装包
 - 软件源
-	- http://apt.25pp.com
+	- [http://apt.25pp.com](http://apt.25pp.com)
 
 ### iFile
 - iFile的作用
 	- 可以在iPhone上自由访问iOS文件系统
 	- 类似的还有Filza File Manager、File Browser
 - 软件源
-	- http://apt.thebigboss.org/repofiles/cydia
+	- [http://apt.thebigboss.org/repofiles/cydia](http://apt.thebigboss.org/repofiles/cydia)
 	
 ### PP助手
 - 可以利用PP助手自由安装海量APP
 - 软件源
-	- http://apt.25pp.com/
+	- [http://apt.25pp.com/](http://apt.25pp.com/)
 	
 ### Mac必备
 - iFunBox
@@ -120,8 +120,7 @@ tags: 逆向
 - 针对不同iOS版本的判断方法可能不一样
 - 最简单的一种方法：判断手机上是否安装了Cydia
 
-<pre><code class="language-objectivec">
--（BOOL）re_isJailbreak
+<pre><code class="language-objectivec">-（BOOL）re_isJailbreak
 {
     return [[NSFileManager defaultManager] fileExistsAtPath:@"/Applications/Cydia.app"];
 }
