@@ -1,11 +1,11 @@
 ---
 layout: post
-title: 'AVFoundation'
-subtitle: 'Jenkins、shell'
+title: 'AVFoundation(一)'
+subtitle: 'AVFoundation'
 date: 2018-12-01
 categories: 技术
 cover: 
-tags: Jenkins
+tags: AVFoundation
 ---
 
 # AVFoundation
