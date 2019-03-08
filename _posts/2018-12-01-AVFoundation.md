@@ -27,8 +27,7 @@ tags: Jenkins
 
 ### 视频预览图层
 
-```objective-c
-//私有方法 用于支持该类定义的不同触摸处理方法。 将屏幕坐标系上的触控点转换为摄像头上的坐标系点
+<pre><code class="language-objectivec">//私有方法 用于支持该类定义的不同触摸处理方法。 将屏幕坐标系上的触控点转换为摄像头上的坐标系点
 - (CGPoint)captureDevicePointForPoint:(CGPoint)point {
     AVCaptureVideoPreviewLayer *layer =
         (AVCaptureVideoPreviewLayer *)self.layer;
@@ -39,8 +38,7 @@ tags: Jenkins
      pointForCaptureDevicePointOfInterest : 获取摄像头坐标系的CGPoint数据，返回转换得到的屏幕坐标系CGPoint数据
      */
 }
-
-```
+</code></pre>
 
 ### 视频捕捉关于AVCaputureSession的配置
 
@@ -52,10 +50,7 @@ tags: Jenkins
   * 配置输出(静态图像输出、视频文件输出)
   * 在为session添加输入输出时，注意一定判断是否能添加。(摄像头并不隶属于任何一个App它是公共设备)
 
-```objective-c
-- (BOOL)setupSession:(NSError **)error {
-
-    
+<pre><code class="language-objectivec">- (BOOL)setupSession:(NSError **)error {
     //创建捕捉会话。AVCaptureSession 是捕捉场景的中心枢纽
     self.captureSession = [[AVCaptureSession alloc]init];
     
@@ -174,14 +169,13 @@ tags: Jenkins
     }
 
 }
-```
+</code></pre>
 
 
 
 ### 实现前后摄像头的改变
 
-```objective-c
-#pragma mark - Device Configuration   配置摄像头支持的方法
+<pre><code class="language-objectivec">#pragma mark - Device Configuration   配置摄像头支持的方法
 //寻找指定的摄像头设备
 - (AVCaptureDevice *)cameraWithPosition:(AVCaptureDevicePosition)position {
     
@@ -283,7 +277,7 @@ tags: Jenkins
     
     return YES;
 }
-```
+</code></pre>
 
 ### 实现摄像头自动聚焦功能
 
@@ -293,33 +287,24 @@ tags: Jenkins
 
 *  每当修改摄像头设备时，一定要先测试修改动作是否能被设备支持。并不是所有的摄像头都支持所有功能，例如前置摄像头就不支持对焦操作，因为它和目标距离一般在一臂之长的距离。但大部分后置摄像头是可以支持全尺寸对焦。尝试应用一个不被支持的动作，会导致异常崩溃。所以修改摄像头设备前，需要判断是否支持
 
-  ```objective-c
-  #pragma mark - Focus Methods 点击聚焦方法的实现
-  
-  - (BOOL)cameraSupportsTapToFocus {
-      
-      //询问激活中的摄像头是否支持兴趣点对焦
-      return [[self activeCamera]isFocusPointOfInterestSupported];
-  }
-  
-  - (void)focusAtPoint:(CGPoint)point {
-      
+<pre><code class="language-objectivec">#pragma mark - Focus Methods 点击聚焦方法的实现
+-(BOOL)cameraSupportsTapToFocus {
+    //询问激活中的摄像头是否支持兴趣点对焦
+    return [[self activeCamera]isFocusPointOfInterestSupported];
+}
+
+-(void)focusAtPoint:(CGPoint)point {
       AVCaptureDevice *device = [self activeCamera];
-      
       //是否支持兴趣点对焦 & 是否自动对焦模式
       if (device.isFocusPointOfInterestSupported && [device isFocusModeSupported:AVCaptureFocusModeAutoFocus]) {
-          
           NSError *error;
           //锁定设备准备配置，如果获得了锁
           //因为配置时，不能让多个对象对他进行更改，所以要对该过程上锁
           if ([device lockForConfiguration:&error]) {
-              
               //将focusPointOfInterest属性设置CGPoint
               device.focusPointOfInterest = point;
-              
               //focusMode 设置为AVCaptureFocusModeAutoFocus
               device.focusMode = AVCaptureFocusModeAutoFocus;
-              
               //释放该锁定
               [device unlockForConfiguration];
           }else{
@@ -328,15 +313,16 @@ tags: Jenkins
           }
       }
   }
-  ```
+</code></pre>
+
+
+
 
 
 
 ### 实现摄像头自动曝光以及锁定曝光
 
-```objective-c
-#pragma mark - Exposure Methods   点击曝光的方法实现
-
+<pre><code class="language-objectivec">#pragma mark - Exposure Methods   点击曝光的方法实现
 - (BOOL)cameraSupportsTapToExpose {
     
     //询问设备是否支持对一个兴趣点进行曝光
@@ -466,14 +452,13 @@ static const NSString *THCameraAdjustingExposureContext;
         [self.delegate deviceConfigurationFailedWithError:error];
     }
 }
-```
+</code></pre>
 
 
 
 ### 实现摄像头手电筒和闪光灯模式的开启关闭
 
-```objective-c
-#pragma mark - Flash and Torch Modes    闪光灯 & 手电筒
+<pre><code class="language-objectivec">#pragma mark - Flash and Torch Modes    闪光灯 & 手电筒
 
 //判断是否有闪光灯
 - (BOOL)cameraHasFlash {
@@ -538,14 +523,13 @@ static const NSString *THCameraAdjustingExposureContext;
         }
     }
 }
-```
+</code></pre>
 
 
 
 ### 静态图片的拍摄
 
-```objective-c
-#pragma mark - Image Capture Methods 拍摄静态图片
+<pre><code class="language-objectivec">#pragma mark - Image Capture Methods 拍摄静态图片
 /*
     AVCaptureStillImageOutput 是AVCaptureOutput的子类。用于捕捉图片
  */
@@ -646,5 +630,7 @@ static const NSString *THCameraAdjustingExposureContext;
         [nc postNotificationName:THThumbnailCreatedNotification object:image];
     });
 }
-```
+</code></pre>
+
+
 
