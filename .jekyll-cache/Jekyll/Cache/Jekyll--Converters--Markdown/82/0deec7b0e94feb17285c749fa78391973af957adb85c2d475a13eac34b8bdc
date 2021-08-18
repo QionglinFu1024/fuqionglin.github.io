@@ -1,0 +1,421 @@
+I"1,<h2 id="结构体">结构体</h2>
+
+<ul>
+  <li>在 Swift 标准库中，绝大多数的公开类型都是结构体，而枚举和类只占很小一部分
+    <ul>
+      <li>比如Bool、Int、Double、 String、Array、Dictionary等常见类型都是结构体</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>struct Date {
+    var year: Int
+    var month: Int
+    var day: Int
+}
+//编辑器自动生成
+var date = Date(year: 2019, month: 6, day: 23)
+</code></pre></div></div>
+
+<ul>
+  <li>所有的结构体都有一个编译器自动生成的初始化器(initializer，初始化方法、构造器、构造方法)
+    <ul>
+      <li>在第6行调用的，可以传入所有成员值，用以初始化所有成员(存储属性，Stored Property)</li>
+    </ul>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="结构体的初始化器">结构体的初始化器</h3>
+
+<ul>
+  <li>编译器会根据情况，可能会为结构体生成多个初始化器，宗旨是:保证所有成员都有初始值</li>
+</ul>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/Swift5/000020.jpg" alt="" /></p>
+
+<hr />
+
+<h3 id="思考下面代码能编译通过么">思考:下面代码能编译通过么?</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>struct Point {
+    var x: Int?
+    var y: Int?
+}
+var p1 = Point(x: 10, y: 10)
+var p2 = Point(y: 10)
+var p3 = Point(x: 10)
+var p4 = Point()
+</code></pre></div></div>
+
+<ul>
+  <li>可选项都有个默认值nil
+    <ul>
+      <li>因此可以编译通过</li>
+    </ul>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="自定义初始化器">自定义初始化器</h3>
+
+<ul>
+  <li>一旦在定义结构体时自定义了初始化器，编译器就不会再帮它自动生成其他初始化器</li>
+</ul>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/Swift5/000021.jpg" alt="" /></p>
+
+<hr />
+
+<h3 id="窥探初始化器的本质">窥探初始化器的本质</h3>
+
+<ul>
+  <li>以下2段代码完全等效</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>struct Point {
+    var x: Int = 0
+    var y: Int = 0
+}
+var p = Point()
+
+struct Point {
+    var x: Int
+    var y: Int
+    init() {
+        x=0
+        y=0
+    }
+}
+var p = Point()
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="结构体内存结构">结构体内存结构</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>struct Point {
+    var x: Int = 0
+    var y: Int = 0
+    var origin: Bool = false
+}
+print(MemoryLayout&lt;Point&gt;.size) // 17
+print(MemoryLayout&lt;Point&gt;.stride) // 24
+print(MemoryLayout&lt;Point&gt;.alignment) // 8
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="类">类</h2>
+
+<ul>
+  <li>类的定义和结构体类似，但编译器并没有为类自动生成可以传入成员值的初始化器</li>
+</ul>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/Swift5/000022.jpg" alt="" /></p>
+
+<hr />
+
+<h3 id="类的初始化器">类的初始化器</h3>
+
+<ul>
+  <li>如果类的所有成员都在定义的时候指定了初始值，编译器会为类生成无参的初始化器
+    <ul>
+      <li>成员的初始化是在这个初始化器中完成的</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Point {
+    var x: Int = 10
+    var y: Int = 20
+}
+let p1 = Point()
+
+class Point {
+    var x: Int
+    var y: Int
+    init() {
+        x = 10
+        y = 20
+    }
+}
+let p1 = Point()
+//上面2段代码是完全等效的
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="结构体与类的本质区别">结构体与类的本质区别</h3>
+
+<ul>
+  <li>结构体是值类型(枚举也是值类型)，类是引用类型(指针类型)</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Size {
+    var width = 1
+    var height = 2
+}
+
+struct Point {
+    var x = 3
+    var y = 4
+}
+
+func test() {
+    var size = Size()
+    var point = Point()
+}
+
+判断是否在堆空间 汇编查看是否调用alloc malloc
+</code></pre></div></div>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/Swift5/000023.jpg" alt="" /></p>
+
+<ul>
+  <li>上图都是针对64bit环境</li>
+</ul>
+
+<hr />
+
+<h3 id="值类型">值类型</h3>
+
+<ul>
+  <li>值类型赋值给var、let或者给函数传参，是直接将所有内容拷贝一份
+    <ul>
+      <li>类似于对文件进行copy、paste操作，产生了全新的文件副本。属于深拷贝(deep copy)</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>struct Point {
+    var x: Int
+    var y: Int
+}
+
+func test() {
+    var p1 = Point(x: 10, y: 20)
+    var p2 = p1
+}
+</code></pre></div></div>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/Swift5/000024.jpg" alt="" /></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>p2.x = 11
+p2.y = 22
+// 请问p1.x和p1.y是多少?
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="值类型的赋值操作">值类型的赋值操作</h3>
+
+<ul>
+  <li>在Swift标准库中，为了提升性能，String、Array、Dictionary、Set采取了Copy On Write的技术
+    <ul>
+      <li>比如仅当有“写”操作时，才会真正执行拷贝操作</li>
+      <li>对于标准库值类型的赋值操作，Swift 能确保最佳性能，所有没必要为了保证最佳性能来避免赋值</li>
+    </ul>
+  </li>
+  <li>建议：不需要修改的，尽量定义成let</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var s1 = "Jack"
+var s2 = s1
+s2.append("_Rose")
+print(s1) // Jack
+print(s2) // Jack_Rose
+
+var a1 = [1, 2, 3]
+var a2 = a1
+a2.append(4)
+a1[0] = 2
+print(a1) // [2, 2, 3]
+print(a2) // [1, 2, 3, 4]
+
+var d1 = ["max" : 10, "min" : 2]
+var d2 = d1
+d1["other"] = 7
+d2["max"] = 12
+print(d1) // ["other": 7, "max": 10, "min": 2]
+print(d2) // ["max": 12, "min": 2]
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>struct Point {
+    var x: Int
+    var y: Int
+}
+var p1 = Point(x: 10, y: 20)
+p1 = Point(x: 11, y: 22)
+</code></pre></div></div>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/Swift5/000025.jpg" alt="" /></p>
+
+<hr />
+
+<h3 id="引用类型">引用类型</h3>
+
+<ul>
+  <li>引用赋值给var、let或者给函数传参，是将内存地址拷贝一份
+    <ul>
+      <li>类似于制作一个文件的替身(快捷方式、链接)，指向的是同一个文件。属于浅拷贝(shallow copy)</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Size {
+    var width: Int
+    var height: Int
+    init(width: Int, height: Int) {
+        self.width = width
+        self.height = height }
+}
+
+func test() {
+    var s1 = Size(width: 10, height: 20)
+    var s2 = s1
+}
+s2.width = 11
+s2.height = 22
+// 请问s1.width和s1.height是多少?
+</code></pre></div></div>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/Swift5/000026.jpg" alt="" /></p>
+
+<hr />
+
+<h3 id="对象的堆空间申请过程">对象的堆空间申请过程</h3>
+
+<ul>
+  <li>在Swift中，创建类的实例对象，要向堆空间申请内存，大概流程如下
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">Class.__allocating_init() _</code></li>
+      <li><em>libswiftCore.dylib:</em><code class="language-plaintext highlighter-rouge">swift_allocObject_</code></li>
+      <li>libswiftCore.dylib:<code class="language-plaintext highlighter-rouge">swift_slowAlloc</code></li>
+      <li>libsystem_malloc.dylib:<code class="language-plaintext highlighter-rouge">malloc</code></li>
+    </ul>
+  </li>
+  <li>在Mac、iOS中的<code class="language-plaintext highlighter-rouge">malloc</code>函数分配的内存大小总是16的倍数</li>
+  <li>通过<strong>class_getInstanceSize</strong>可以得知:类的对象至少需要占用多少内存</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Point  {
+    var x = 11
+    var test = true
+    var y = 22
+}
+var p = Point()
+class_getInstanceSize(type(of: p)) // 40
+class_getInstanceSize(Point.self) // 40
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="引用类型的赋值操作">引用类型的赋值操作</h3>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/Swift5/000027.jpg" alt="" /></p>
+
+<hr />
+
+<h3 id="值类型引用类型的let">值类型、引用类型的let</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>struct Point {
+    var x: Int
+    var y: Int
+}
+
+class Size {
+    var width: Int
+    var height: Int
+    init(width: Int, height: Int) {
+        self.width = width
+        self.height = height
+    }
+}
+</code></pre></div></div>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/Swift5/000028.jpg" alt="" /></p>
+
+<hr />
+
+<h3 id="嵌套类型">嵌套类型</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>struct Poker {
+    enum Suit : Character {
+        case spades = "♠️", hearts = "♥️", diamonds = "♦️",clubs = "♣️"
+    }
+    enum Rank : Int {
+        case two = 2, three, four, five, six, seven, eight, nine, ten
+        case jack, queen, king, ace
+    }
+}
+
+print(Poker.Suit.hearts.rawValue)
+
+var suit = Poker.Suit.spades
+suit = .diamonds
+
+var rank = Poker.Rank.five
+rank = .king
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="枚举结构体类都可以定义方法">枚举、结构体、类都可以定义方法</h3>
+
+<ul>
+  <li>一般把定义在枚举、结构体、类内部的函数，叫做方法</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Size {
+    var width = 10
+    var height = 10
+    func show() {
+        print("width=\(width), height=\(height)") }
+}
+let s = Size()
+s.show() // width=10, height=10
+
+enum PokerFace : Character {
+    case spades = "♠️", hearts = "♥️", diamonds = "♦️",clubs = "♣️"
+    func show() {
+        print("face is \(rawValue)")
+    }
+}
+let pf = PokerFace.hearts
+pf.show() // face is ♥️
+
+struct Point {
+    var x = 10
+    var y = 10
+    func show() {
+        print("x=\(x), y=\(y)")
+    }
+}
+let p = Point()
+p.show() // x=10, y=10
+</code></pre></div></div>
+
+<ul>
+  <li>方法占用对象的内存么?
+    <ul>
+      <li>不占用</li>
+      <li>方法的本质就是函数</li>
+      <li>方法、函数都存放在代码段</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Point.show        0x100002320
+show1             0x100001e70
+全局变量           0x10000bad0
+堆空间             0x102908550
+局部变量(栈空间)    0x000007ffeefbf400
+
+很大一串数字的一般在栈空间
+中间不是4个0，10后跟一大串数字，一般在堆空间
+</code></pre></div></div>
+
+:ET

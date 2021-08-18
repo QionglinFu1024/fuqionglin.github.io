@@ -1,0 +1,120 @@
+I"�<p><strong>在你的开发过程中，是否遇到过如下的需求：</strong></p>
+
+<p>在tableView类型的展示列表中，点击每个cell中人物头像都可以跳转到人物详情，可参见微博中的头像，同理包括转发、评论按钮、各种链接及linkcard。
+跳转到任意页面</p>
+
+<p>（1）产品要求，某个页面的不同banner图，点击可以跳转到任何一个页面，可能是原生的页面A、页面B，或者是web页C。</p>
+
+<p>（2）在web页面，可以跳转到任何一个原生页面。</p>
+
+<p>（3）在远程推送中跳转到任意指定的页面。</p>
+
+<p>以上2种需求，我想大多数开发者都遇到过，并且可以实现这种功能。毕竟，这是比较基础的功能。但是代码未必那么优雅。</p>
+
+<h4 id="一般处理办法">一般处理办法</h4>
+
+<ul>
+  <li>
+    <p>针对 1：一般初学者会用target或者block等方法在tableView的代理方法拿到事件，并把要执行的跳转写到controller里。功能是可以实现的，但问题是这种cell及相似的cell（布局有些变化，或者多几个少几个控件）一般出现在多个页面。这样的话相同的代码就会出现在多个地方。就算把跳转方法抽取出来写成category，但是target或者block总是每个地方都要写的。</p>
+  </li>
+  <li>
+    <p>针对 2：初级的方法是每个地方写一坨判断及跳转，高级一些是抽取出来写在基类或者category。</p>
+  </li>
+</ul>
+
+<h3 id="优雅的解决办法利用runtime">优雅的解决办法（利用runtime）</h3>
+
+<p>利用runtime动态生成对象、属性、方法这特性，我们可以先跟服务端商量好，定义跳转规则，比如要跳转到A控制器，需要传属性id、type，那么服务端返回字典给我，里面有控制器名，两个属性名跟属性值，客户端就可以根据控制器名生成对象，再用kvc给对象赋值，这样就搞定了。</p>
+
+<p><strong>举例：比如根据推送规则跳转对应界面HSFeedsViewController</strong></p>
+
+<h4 id="hsfeedsviewcontrollerh">HSFeedsViewController.h：</h4>
+
+<h5 id="进入该界面需要传的属性">进入该界面需要传的属性</h5>
+
+<pre><code class="language-objectivec">@interface HSFeedsViewController : UIViewController
+// 注：根据下面的两个属性，可以从服务器获取对应的频道列表数据
+/** 频道ID */
+@property (nonatomic, copy) NSString *ID;
+/** 频道type */
+@property (nonatomic, copy) NSString *type;
+@end
+</code></pre>
+
+<h4 id="appdelegatem-中添加以下代码片段">AppDelegate.m 中添加以下代码片段：</h4>
+<h5 id="推送过来的消息规则">推送过来的消息规则</h5>
+
+<pre><code class="language-objectivec">// 这个规则肯定事先跟服务端沟通好，跳转对应的界面需要对应的参数
+NSDictionary *userInfo = @{
+                           @"class": @"HSFeedsViewController",
+                           @"property": @{
+                                        @"ID": @"123",
+                                        @"type": @"12"
+                                   }
+                           };
+</code></pre>
+
+<h5 id="接收推送消息">接收推送消息</h5>
+<pre><code class="language-objectivec">- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo
+{
+    [self push:userInfo];
+}
+</code></pre>
+
+<h5 id="跳转界面">跳转界面：</h5>
+<pre><code class="language-objectivec">- (void)push:(NSDictionary *)params
+{
+    // 类名
+    NSString *class =[NSString stringWithFormat:@"%@", params[@"class"]];
+    const char *className = [class cStringUsingEncoding:NSASCIIStringEncoding];
+    // 从一个字串返回一个类
+    Class newClass = objc_getClass(className);
+    if (!newClass)
+    {
+        // 创建一个类
+        Class superClass = [UIViewController class];
+        newClass = objc_allocateClassPair(superClass, className, 0);
+        // 注册你创建的这个类
+        objc_registerClassPair(newClass);
+    }
+    // 创建对象
+    id instance = [[newClass alloc] init];
+    // 对该对象赋值属性
+    NSDictionary * propertys = params[@"property"];
+    [propertys enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+        // 检测这个对象是否存在该属性
+        if ([self checkIsExistPropertyWithInstance:instance verifyPropertyName:key]) {
+            // 利用kvc赋值
+            [instance setValue:obj forKey:key];
+        }
+    }];
+    // 获取导航控制器
+    UITabBarController *tabVC = (UITabBarController *)self.window.rootViewController;
+    UINavigationController *pushClassStance = (UINavigationController *)tabVC.viewControllers[tabVC.selectedIndex];
+    // 跳转到对应的控制器
+    [pushClassStance pushViewController:instance animated:YES];
+</code></pre>
+
+<h5 id="检测对象是否存在该属性">检测对象是否存在该属性：</h5>
+<pre><code class="language-objectivec">- (BOOL)checkIsExistPropertyWithInstance:(id)instance verifyPropertyName:(NSString *)verifyPropertyName
+{
+    unsigned int outCount, i;
+    // 获取对象里的属性列表
+    objc_property_t * properties = class_copyPropertyList([instance
+                                                           class], &amp;outCount);
+    for (i = 0; i &lt; outCount; i++) {
+        objc_property_t property =properties[i];
+        //  属性名转成字符串
+        NSString *propertyName = [[NSString alloc] initWithCString:property_getName(property) encoding:NSUTF8StringEncoding];
+        // 判断该属性是否存在
+        if ([propertyName isEqualToString:verifyPropertyName]) {
+            free(properties);
+            return YES;
+        }
+    }
+    free(properties);
+    return NO;
+}
+</code></pre>
+
+:ET

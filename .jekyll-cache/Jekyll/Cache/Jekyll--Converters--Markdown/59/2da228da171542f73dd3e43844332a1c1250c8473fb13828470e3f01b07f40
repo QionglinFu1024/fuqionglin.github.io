@@ -1,0 +1,409 @@
+I"<<h2 id="面试题">面试题</h2>
+
+<h4 id="一线程和进程的关系和区别">（一）：线程和进程的关系和区别</h4>
+<ul>
+  <li>线程定义
+    <ul>
+      <li><strong>线程是进程的基本执行单元</strong>，一个进程的所有任务都在线程中执行</li>
+      <li>进程要想执行任务，必须得有线程，进程至少要有一条线程</li>
+      <li>程序启动会默认开启一条线程，这条线程被称为主线程或 UI 线程</li>
+    </ul>
+  </li>
+  <li>进程定义
+    <ul>
+      <li>进程是指在系统中正在运行的一个应用程序</li>
+      <li><strong>每个进程之间是独立的</strong>，每个进程均运行在其专用的且受保护的内存</li>
+    </ul>
+  </li>
+  <li>进程与线程的区别
+    <ul>
+      <li>地址空间：<strong>同一进程的线程共享本进程的地址空间，而进程之间则是独立的地址空间</strong>。</li>
+      <li>资源拥有：<strong>同一进程内的线程共享本进程的资源如内存、I/O、cpu等，但是进程之间的资源是独立的</strong>。</li>
+      <li>一个进程崩溃后，在保护模式下不会对其他进程产生影响，但是一个线程崩溃整个进程都死掉。所以多进程要比多线程健壮。</li>
+      <li>进程切换时，消耗的资源大，效率高。所以涉及到频繁的切换时，使用线程要好于进程。同样如果要求同时进行并且又要共享某些变量的并发操作，只能用线程不能用进程</li>
+      <li>执行过程：每个独立的进程有一个程序运行的入口、顺序执行序列和程序入口。但是线程不能独立执行，必须依存在应用程序中，由应用程序提供多个线程执行控制。</li>
+      <li>线程是处理器调度的基本单位，但是进程不是。</li>
+    </ul>
+  </li>
+</ul>
+
+<h4 id="二多线程的意义">（二）：多线程的意义</h4>
+
+<ul>
+  <li>优点
+    <ul>
+      <li>能适当提高程序的执行效率</li>
+      <li>能适当提高资源的利用率（CPU，内存）</li>
+      <li>线程上的任务执行完成后，线程会自动销毁</li>
+    </ul>
+  </li>
+  <li>缺点
+    <ul>
+      <li>开启线程需要占用一定的内存空间（默认情况下，每一个线程都占 512 KB）</li>
+      <li>如果开启大量的线程，会占用大量的内存空间，降低程序的性能</li>
+      <li>线程越多，CPU 在调用线程上的开销就越大</li>
+      <li>程序设计更加复杂，比如线程间的通信、多线程的数据共享</li>
+    </ul>
+  </li>
+</ul>
+
+<h4 id="面试题三多线程的原理">面试题（三）：多线程的原理</h4>
+<ul>
+  <li>CPU在线程之间以一个非常小的时间片不断调度</li>
+  <li>（单核CPU）同一时间，CPU 只能处理 1 个线程
+    <ul>
+      <li>换言之，同一时间只有 1 个线程在执行</li>
+    </ul>
+  </li>
+  <li>多线程同时执行：
+    <ul>
+      <li>是 CPU 快速的在多个线程之间的切换</li>
+      <li>CPU 调度线程的时间足够快，就造成了多线程的“同时”执行的效果</li>
+    </ul>
+  </li>
+  <li>如果线程数非常多
+    <ul>
+      <li>CPU 会在 N 个线程之间切换，消耗大量的 CPU 资源</li>
+      <li>每个线程被调度的次数会降低，线程的执行效率降低</li>
+    </ul>
+  </li>
+</ul>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/01.jpg" alt="" /></p>
+
+<h4 id="面试题四线程生命周期">面试题（四）：线程生命周期</h4>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/02.jpg" alt="" /></p>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/05.jpg" alt="" /></p>
+
+<h4 id="线程池调度原理">线程池调度原理</h4>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/03.jpg" alt="" /></p>
+
+<h4 id="线程不安全">线程不安全</h4>
+
+<ul>
+  <li>资源共享，抢夺
+<img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/04.jpg" alt="" /></li>
+</ul>
+
+<pre><code class="language-objectivec">#import "ViewController.h"
+
+@interface ViewController ()
+@property (nonatomic, assign) NSInteger tickets;
+@property (nonatomic, strong) NSMutableArray *mArray;
+/**
+ atomic     是原子属性，是为多线程开发准备的，是默认属性！
+            仅仅在属性的 `setter` 方法中，增加了锁(自旋锁)，能够保证同一时间，只有一条线程对属性进行`写`操作
+            同一时间 单(线程)写多(线程)读的线程处理技术
+ nonatomic  是非原子属性
+            没有锁！性能高！
+ */
+@property (nonatomic, copy)   NSString *name;
+@end
+
+@implementation ViewController
+// 在 OC 中，如果同时重写 了 setter &amp; getter 方法，系统不再提供 _成员变量，需要使用合成指令
+// @synthesize name 取个别名:_name
+@synthesize name = _name;
+#pragma mark - 模拟原子属性示例代码
+- (NSString *)name {
+    return _name;
+}
+- (void)setName:(NSString *)name {
+    /**
+     * 增加一把锁，就能够保证一条线程在同一时间写入!
+     */
+    @synchronized (self) {
+        _name = name;
+    }
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+}
+
+- (void)touchesBegan:(NSSet&lt;UITouch *&gt; *)touches withEvent:(UIEvent *)event {
+    self.tickets = 20;
+
+    // 1. 开启一条售票线程
+    NSThread *t1 = [[NSThread alloc] initWithTarget:self selector:@selector(saleTickets) object:nil];
+    t1.name = @"售票 A";
+    [t1 start];
+    
+    // 2. 再开启一条售票线程
+    NSThread *t2 = [[NSThread alloc] initWithTarget:self selector:@selector(saleTickets) object:nil];
+    t2.name = @"售票 B";
+    [t2 start];
+
+}
+- (void)saleTickets {
+    
+    while (YES) {
+        // 0. 模拟延时
+    
+        //NSObject *obj = [[NSObject alloc] init];
+        //obj 是自己的临时对象,对其他访问该区域的无影响
+        //可以锁self 那么访问该方法的时候所有的都锁住,可以根据需求特定锁
+        @synchronized(@(self.tickets)){
+        
+            [NSThread sleepForTimeInterval:1];
+            // 1. 判断是否还有票
+            if (self.tickets &gt; 0) {
+                // 2. 如果有票，卖一张，提示用户
+                self.tickets--;
+                NSLog(@"剩余票数 %zd %@", self.tickets, [NSThread currentThread]);
+            } else {
+                // 3. 如果没票，退出循环
+                NSLog(@"没票了，来晚了 %@", [NSThread currentThread]);
+                break;
+            }
+            //在锁里面操作其他的变量的影响
+            [self.mArray addObject:[NSDate date]];
+            NSLog(@"%@ *** %@",[NSThread currentThread],self.mArray);
+        }
+    }
+    
+}
+
+
+#pragma mark - lazy
+
+- (NSMutableArray *)mArray{
+    if (!_mArray) {
+        _mArray = [NSMutableArray arrayWithCapacity:10];
+    }
+    return _mArray;
+}
+
+@end
+</code></pre>
+
+<ul>
+  <li>互斥锁小结
+    <ul>
+      <li>保证锁内的代码，同一时间，只有一条线程能够执行！</li>
+      <li>互斥锁的锁定范围，应该尽量小，锁定范围越大，效率越差！</li>
+    </ul>
+  </li>
+  <li>互斥锁参数
+    <ul>
+      <li>能够加锁的任意 NSObject 对象</li>
+      <li>注意：锁对象一定要保证所有的线程都能够访问</li>
+      <li>如果代码中只有一个地方需要加锁，大多都使用 self，这样可以避免单独再创建一个锁对象</li>
+    </ul>
+  </li>
+</ul>
+
+<h4 id="面试题五atomic与nonatomic-的区别">面试题（五）：atomic与nonatomic 的区别</h4>
+
+<ul>
+  <li>nonatomic 非原子属性</li>
+  <li>atomic 原子属性(线程安全)，针对多线程设计的，默认值
+    <ul>
+      <li>保证同一时间只有一个线程能够写入(但是同一个时间多个线程都可以取值)</li>
+      <li>atomic 本身就有一把锁(自旋锁)</li>
+      <li>单写多读：单个线程写入，多个线程可以读取</li>
+    </ul>
+  </li>
+  <li>atomic：线程安全，需要消耗大量的资源</li>
+  <li>nonatomic：非线程安全，适合内存小的移动设备</li>
+</ul>
+
+<p>iOS 开发的建议</p>
+
+<ul>
+  <li>所有属性都声明为 nonatomic</li>
+  <li>尽量避免多线程抢夺同一块资源</li>
+  <li>尽量将加锁、资源抢夺的业务逻辑交给服务器端处理，减小移动客户端的压力</li>
+</ul>
+
+<h4 id="面试题六ui控件使用weak还是strong修饰">面试题（六）：UI控件使用weak还是strong修饰</h4>
+
+<h4 id="面试题七线程和runloop的关系">面试题（七）：线程和runloop的关系</h4>
+
+<ul>
+  <li>runloop与线程是一一对应的，一个runloop对应一个核心的线程，为什么说是核心的，是因为runloop是可以嵌套的，但是核心的只能有一个，他们的关系保存在一个全局的字典里。</li>
+  <li>runloop是来管理线程的，当线程的runloop被开启后，线程会在执行完任务后进入休眠状态，有了任务就会被唤醒去执行任务。</li>
+  <li>runloop在第一次获取时被创建，在线程结束时被销毁。</li>
+  <li>对于主线程来说，runloop在程序一启动就默认创建好了。</li>
+  <li>对于子线程来说，runloop是懒加载的，只有当我们使用的时候才会创建，所以在子线程用定时器要注意：确保子线程的runloop被创建，不然定时器不会回调。</li>
+</ul>
+
+<h4 id="线程通讯">线程通讯</h4>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/06.jpg" alt="" /></p>
+
+<ul>
+  <li>NSPort 分流阀，流到子线，端口监督器</li>
+</ul>
+
+<pre><code class="language-objectivec">#import "PortViewController.h"
+#import &lt;objc/runtime.h&gt;
+#import "KCPerson.h"
+
+@interface PortViewController ()<NSMachPortDelegate>
+@property (nonatomic, strong) NSPort *myPort;
+@property (nonatomic, strong) KCPerson *person;
+
+@end
+
+@implementation PortViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.title = @"Port线程通讯";
+    self.view.backgroundColor = [UIColor whiteColor];
+
+    //1. 创建主线程的port
+    // 子线程通过此端口发送消息给主线程
+    self.myPort = [NSMachPort port];
+    //2. 设置port的代理回调对象
+    self.myPort.delegate = self;
+    //3. 把port加入runloop，接收port消息
+    [[NSRunLoop currentRunLoop] addPort:self.myPort forMode:NSDefaultRunLoopMode];
+    
+    self.person = [[KCPerson alloc] init];
+    [NSThread detachNewThreadSelector:@selector(personLaunchThreadWithPort:)
+                             toTarget:self.person
+                           withObject:self.myPort];
+    
+}
+
+#pragma mark - NSMachPortDelegate
+
+- (void)handlePortMessage:(NSPortMessage *)message{
+    
+    NSLog(@"VC == %@",[NSThread currentThread]);
+    
+    NSLog(@"从person 传过来一些信息:");
+//    NSLog(@"localPort == %@",[message valueForKey:@"localPort"]);
+//    NSLog(@"remotePort == %@",[message valueForKey:@"remotePort"]);
+//    NSLog(@"receivePort == %@",[message valueForKey:@"receivePort"]);
+//    NSLog(@"sendPort == %@",[message valueForKey:@"sendPort"]);
+//    NSLog(@"msgid == %@",[message valueForKey:@"msgid"]);
+//    NSLog(@"components == %@",[message valueForKey:@"components"]);
+    //会报错,没有这个隐藏属性
+    //NSLog(@"from == %@",[message valueForKey:@"from"]);
+    
+    NSArray *messageArr = [message valueForKey:@"components"];
+    NSString *dataStr   = [[NSString alloc] initWithData:messageArr.firstObject  encoding:NSUTF8StringEncoding];
+    NSLog(@"传过来一些信息 :%@",dataStr);
+    NSPort  *destinPort = [message valueForKey:@"remotePort"];
+    
+    if(!destinPort || ![destinPort isKindOfClass:[NSPort class]]){
+        NSLog(@"传过来的数据有误");
+        return;
+    }
+    
+    NSData *data = [@"VC收到!!!" dataUsingEncoding:NSUTF8StringEncoding];
+    
+    NSMutableArray *array  =[[NSMutableArray alloc]initWithArray:@[data,self.myPort]];
+    
+    // 非常重要,如果你想在Person的port接受信息,必须加入到当前主线程的runloop
+    [[NSRunLoop currentRunLoop] addPort:destinPort forMode:NSDefaultRunLoopMode];
+    
+    NSLog(@"VC == %@",[NSThread currentThread]);
+    
+    BOOL success = [destinPort sendBeforeDate:[NSDate date]
+                                        msgid:10010
+                                   components:array
+                                         from:self.myPort
+                                     reserved:0];
+    NSLog(@"%d",success);
+
+}
+
+- (void)getAllProperties:(id)somebody{
+    
+    u_int count = 0;
+    objc_property_t *properties = class_copyPropertyList([somebody class], &amp;count);
+    for (int i = 0; i &lt; count; i++) {
+        const char *propertyName = property_getName(properties[i]);
+         NSLog(@"%@",[NSString stringWithUTF8String:propertyName]);
+    }
+}
+
+
+@end
+&lt;/code&gt;&lt;/pre&gt;
+
+
+<pre><code class="language-objectivec">#import "KCPerson.h"
+
+@interface KCPerson()<NSMachPortDelegate>
+@property (nonatomic, strong) NSPort *vcPort;
+@property (nonatomic, strong) NSPort *myPort;
+@end
+
+@implementation KCPerson
+
+
+- (void)personLaunchThreadWithPort:(NSPort *)port{
+    
+    NSLog(@"VC 响应了Person里面");
+    @autoreleasepool {
+        //1. 保存主线程传入的port
+        self.vcPort = port;
+        //2. 设置子线程名字
+        [[NSThread currentThread] setName:@"KCPersonThread"];
+        //3. 开启runloop
+        [[NSRunLoop currentRunLoop] run];
+        //4. 创建自己port
+        self.myPort = [NSMachPort port];
+        //5. 设置port的代理回调对象
+        self.myPort.delegate = self;
+        //6. 完成向主线程port发送消息
+        [self sendPortMessage];
+    }
+}
+
+
+/**
+ *   完成向主线程发送port消息
+ */
+
+- (void)sendPortMessage {
+ 
+    NSData *data1 = [@"Gavin" dataUsingEncoding:NSUTF8StringEncoding];
+    NSData *data2 = [@"Cooci" dataUsingEncoding:NSUTF8StringEncoding];
+
+    NSMutableArray *array  =[[NSMutableArray alloc]initWithArray:@[data1,self.myPort]];
+    // 发送消息到VC的主线程
+    // 第一个参数：发送时间。
+    // msgid 消息标识。
+    // components，发送消息附带参数。
+    // reserved：为头部预留的字节数
+    [self.vcPort sendBeforeDate:[NSDate date]
+                          msgid:10086
+                     components:array
+                           from:self.myPort
+                       reserved:0];
+    
+}
+
+#pragma mark - NSMachPortDelegate
+
+- (void)handlePortMessage:(NSPortMessage *)message{
+    
+    NSLog(@"person:handlePortMessage  == %@",[NSThread currentThread]);
+
+
+    NSLog(@"从VC 传过来一些信息:");
+    NSLog(@"components == %@",[message valueForKey:@"components"]);
+    NSLog(@"receivePort == %@",[message valueForKey:@"receivePort"]);
+    NSLog(@"sendPort == %@",[message valueForKey:@"sendPort"]);
+    NSLog(@"msgid == %@",[message valueForKey:@"msgid"]);
+}
+
+
+@end
+&lt;/code&gt;&lt;/pre&gt;
+
+#### 内存管理
+
+![](https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/07.jpg)
+
+</NSMachPortDelegate></code></pre></NSMachPortDelegate></code></pre>
+:ET

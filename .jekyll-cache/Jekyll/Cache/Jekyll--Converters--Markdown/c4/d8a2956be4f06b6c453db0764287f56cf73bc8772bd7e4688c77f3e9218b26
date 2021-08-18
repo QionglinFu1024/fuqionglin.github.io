@@ -1,0 +1,16 @@
+I"�<h3 id="mac远程登录到iphone">Mac远程登录到iPhone</h3>
+<ul>
+  <li>我们经常在Mac的终端上，通过敲一些命令行来完成一些操作</li>
+  <li>iOS和Mac OS X都是基于Darwin（苹果的一个基于Unix的开源系统内核），所以iOS中同样支持终端的命令行操作
+    <ul>
+      <li>在逆向工程中，我们经常会通过命令行来操纵iPhone</li>
+    </ul>
+  </li>
+  <li>为了能够让Mac终端中的命令行能作用在iPhone上，我们得让Mac和iPhone建立连接
+    <ul>
+      <li>通过Mac远程登录到iPhone的方式建立连接
+<img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E9%80%86%E5%90%91/day02/day02-1.jpg" alt="" /></li>
+    </ul>
+  </li>
+</ul>
+:ET

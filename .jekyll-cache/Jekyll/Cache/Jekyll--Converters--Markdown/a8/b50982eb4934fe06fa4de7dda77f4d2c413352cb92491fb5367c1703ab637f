@@ -1,0 +1,312 @@
+I"(<h4 id="砸壳概述">砸壳概述</h4>
+<ul>
+  <li>拿到路径</li>
+</ul>
+
+<pre><code class="language-objectivec">$ ps -A
+3083 ??         0:02.32 /var/mobile/Containers/Bundle/Application/2E792188-A786-43EA-A13A-78F27B6A38FD/Keep.app/Keep
+</code></pre>
+
+<ul>
+  <li>打开ifunbox拿到ipa拿到Macho</li>
+  <li>查看Macho文件是否被加密</li>
+</ul>
+
+<pre><code class="language-objectivec">$ otool -l Keep | grep crypt
+    cryptoff 16384
+    cryptsize 45711360
+    cryptid 1//加密标识
+</code></pre>
+
+<ul>
+  <li>加壳的应用不能直接执行，操作系统才有解密方法</li>
+</ul>
+
+<blockquote>
+  <p>原理：MachO文件是明文，苹果加密后变成加壳文件。安装到手机，加壳文件跑在手机上，系统解密变成MachO文件，dyld加载MachO文件。砸壳？不知道解密方式？</p>
+
+</blockquote>
+
+<ul>
+  <li>静态砸壳(Clutch)：直接调用解密程序，帮助砸壳，无需用户点击</li>
+  <li>动态砸壳(dumpdecrypted)：不知道解密程序，知道dyld会加载MachO，在启动加载MachO的那一刻从内存中拷出来</li>
+</ul>
+
+<blockquote>
+  <p>DRM(数字版权管理)检查，检查通过，从App的可执行文件中，即MachO选择合适的架构用dyld加载，加载过程中操作系统会进行解密，使用dyld加载解密的MachO
+解密工具不会做解密逻辑，只会遍历loadcommond信息，对应解密后的数据。从内存中dump出来然后生成新的MachO文件</p>
+</blockquote>
+
+<hr />
+
+<h4 id="clutch"><a href="https://github.com/KJCracks/Clutch/releases">Clutch</a></h4>
+
+<ul>
+  <li>命令行工具</li>
+</ul>
+
+<pre><code class="language-objectivec">$ file Clutch-2.0.4
+Clutch-2.0.4: Mach-O universal binary with 3 architectures: [arm_v7:Mach-O executable arm_v7] [arm64:Mach-O 64-bit executable arm64]
+Clutch-2.0.4 (for architecture armv7):	Mach-O executable arm_v7
+Clutch-2.0.4 (for architecture armv7s):	Mach-O executable arm_v7s
+Clutch-2.0.4 (for architecture arm64):	Mach-O 64-bit executable arm64
+</code></pre>
+
+<ul>
+  <li>拷贝到手机，命令行都放到bin文件下(建议把版本后缀去掉)</li>
+</ul>
+
+<pre><code class="language-objectivec">$ scp -P 12345 Clutch root@localhost:/usr/bin
+//改名
+$ mv Clutch-2.0.4 Clutch
+//执行权限
+$ chmod +x Clutch
+//查看加密的应用
+$ Clutch -i
+Installed apps:
+1:   网易云音乐-音乐的力量 com.netease.cloudmusic
+2:   王者荣耀 com.tencent.smoba
+3:   Keep - 自由运动场 com.gotokeep.keep
+//砸壳 Clutch -d 序号/bundleId
+kumani:~ root# Clutch -d com.gotokeep.keep
+//砸壳后的文件路径
+DONE: /private/var/mobile/Documents/Dumped/com.gotokeep.keep-iOS8.0-(Clutch-2.0.4).ipa
+//耗时
+Finished dumping com.gotokeep.keep in 25.6 seconds
+</code></pre>
+
+<h4 id="dumpdecrypted"><a href="https://github.com/stefanesser/dumpdecrypted.git">dumpdecrypted</a></h4>
+
+<ul>
+  <li>cd到文件下执行make,生成dumpdecrypted.o、dumpdecrypted.dyld文件</li>
+</ul>
+
+<blockquote>
+  <p>原理：动态库运行因为DYLD，帮我们链接所有动态库，包括MachO，由于DYLD加载了MachO，App才可以执行，而MachO加载的时候所依赖的动态库又被DYLD链接，所以我们自己的动态库才可以执行，也就是说，砸壳的动态库，要想执行，需要被DYLD加载，而且一个动态库没有执行能力的，加载的时候一定要依附在一个进程上面</p>
+</blockquote>
+
+<pre><code class="language-objectivec">//拷贝到手机,文件夹拷贝加 -r
+$ scp -P 12345 dumpdecrypted.dylib root@localhost:/~
+//DYLD需要配置的环境变量 
+$ DYLD_INSERT_LIBRARIES=dumpdecrypted.dylib /var/mobile/Containers/Bundle/Application/2E792188-A786-43EA-A13A-78F27B6A38FD/Keep.app/Keep
+
+mach-o decryption dumper
+DISCLAIMER: This tool is only meant for security research purposes, not for application crackers.
+
+[+] detected 64bit ARM binary in memory.
+[+] offset to cryptid found: @0x1000c8fc8(from 0x1000c8000) = fc8
+[+] Found encrypted data at address 00004000 of length 45711360 bytes - type 1.
+[+] Opening /private/var/mobile/Containers/Bundle/Application/2E792188-A786-43EA-A13A-78F27B6A38FD/Keep.app/Keep for reading.
+[+] Reading header
+[+] Detecting header type
+[+] Executable is a plain MACH-O image
+[+] Opening Keep.decrypted for writing.
+[+] Copying the not encrypted start of the file
+[+] Dumping the decrypted data into the file
+[+] Copying the not encrypted remainder of the file
+[+] Setting the LC_ENCRYPTION_INFO-&gt;cryptid to 0 at offset fc8
+[+] Closing original file
+[+] Closing dump file
+
+//得到MachO文件,单一架构arm64
+Keep.decrypted
+</code></pre>
+
+<h4 id="theos配置"><a href="https://github.com/theos/theos/wiki">Theos配置</a></h4>
+
+<pre><code class="language-objectivec">//常用的方式
+$ brew install ldid //安装
+$ brew uninstall ldid //卸载
+$ brew search ldid //搜索
+$ brew upgrade ldid //更新
+$ brew list //查看列表
+$ brew update //更新Homebrew
+</code></pre>
+
+<pre><code class="language-objectivec">//查看已安装的THEOS
+$ echo $THEOS
+//配置Vim
+$ vim ~/.bash_profile
+//键入
+export ANDROID_HOME=~/Library/Android/sdk
+export THEOS=/opt/theos
+export CY=/opt/cycript
+export QLshell=~/QLshell
+export PATH=$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:$THEOS/bin/:$CY:$QLshell:$PATH
+//立即生效
+$ source .zshrc
+//查看
+$ cd $THEOS/bin
+$ ls
+deb_build_num.sh   fakeroot.sh        install.mergeDir   nic.pl
+//查看是否配置成功/opt/theos/bin
+$ echo $PATH
+/tools:/platform-tools:/opt/theos/bin:/opt/cycript_0:/Users/qionglinfu/QLshell:/opt/MonkeyDev/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+//然后在哪里都可以敲啦
+$ nic.pl
+</code></pre>
+
+<hr />
+
+<h4 id="使用theos窃取微信密码">使用Theos窃取微信密码</h4>
+
+<ul>
+  <li>插件Tweak开发</li>
+</ul>
+
+<pre><code class="language-objectivec">//选择
+$ nic.pl
+NIC 2.0 - New Instance Creator
+------------------------------
+  [1.] iphone/activator_event
+  [2.] iphone/application_modern
+  [3.] iphone/cydget
+  [4.] iphone/flipswitch_switch
+  [5.] iphone/framework
+  [6.] iphone/ios7_notification_center_widget
+  [7.] iphone/library
+  [8.] iphone/notification_center_widget
+  [9.] iphone/preference_bundle_modern
+  [10.] iphone/tool
+  [11.] iphone/tweak
+  [12.] iphone/xpc_service
+Choose a Template (required):11
+//工程名称
+Project Name (required):WeChatPwdTweak
+//包名,带有中括号的有默认值，直接回车会生成包名
+Package Name [com.yourcompany.wechatpwdtweak]:com.ql.wechatpwdtweak//注意一定要小写
+//作者名称
+Author/Maintainer Name [Qionglin Fu]:bear
+//给哪个程序做.BundleID
+[iphone/tweak] MobileSubstrate Bundle filter [com.apple.springboard]:com.tencent.xin
+//不管,直接回车
+[iphone/tweak] List of applications to terminate upon installation (space-separated, '-' for none) [SpringBoard]:
+//完成
+Instantiating iphone/tweak in wechatpwdtweak/...
+Done.
+
+//生成文件如下：
+Makefile//编译的一些配置
+Tweak.xm//logs
+WeChatPwdTweak.plist//bundleId
+control//配置信息
+</code></pre>
+
+<pre><code class="language-objectivec">//配置Makefile
+
+//wifi
+export THEOS_DEVICE_IP=172.17.10.121
+export THEOS_DEVICE_PORT=22
+
+//USB
+export THEOS_DEVICE_IP=127.0.0.1
+export THEOS_DEVICE_PORT=12345
+//wifi、usb二选一即可
+
+include $(THEOS)/makefiles/common.mk
+TWEAK_NAME = WeChatPwdTweak
+WeChatPwdTweak_FILES = Tweak.xm
+include $(THEOS_MAKE_PATH)/tweak.mk
+after-install::
+	install.exec "killall -9 SpringBoard"
+</code></pre>
+
+<pre><code class="language-objectivec">//三步找到按钮点击事件
+
+$ #0x161668510.allTargets()
+[NSSet setWithArray:@[#"&lt;WCAccountLoginLastUserViewController: 0x15fb91c00&gt;"]]]
+
+$ #0x161668510.allControlEvents()
+64
+
+$ [#0x161668510 actionsForTarget:#0x15fb91c00 forControlEvent:64]
+@["onNext"]
+</code></pre>
+
+<pre><code class="language-objectivec">//hook代码
+%hook WCAccountLoginLastUserViewController
+
+-(void)onNext
+{
+	UIVIew *view = MSHookIvar&amp;ltUIView *&amp;gt(self,"m_passwordView");
+
+	UITextField *password = view.subviews[0].subviews[0].subviews[0];
+	
+	NSLog(@"\n\n\n\n\n\n%@\n\n\n\n\",password.text);
+
+	%orig
+
+}
+
+%end
+</code></pre>
+
+<pre><code class="language-objectivec">//编译
+$ make
+&gt; Making all for tweak WeChatPwdTweak…
+==&gt; Preprocessing Tweak.xm…
+==&gt; Compiling Tweak.xm (armv7)…
+==&gt; Linking tweak WeChatPwdTweak (armv7)…
+clang: warning: libstdc++ is deprecated; move to libc++ with a minimum deployment target of iOS 7 [-Wdeprecated]
+==&gt; Generating debug symbols for WeChatPwdTweak…
+rm /Users/qionglinfu/Desktop/wechatpwdtweak/.theos/obj/debug/armv7/Tweak.xm.mm
+==&gt; Preprocessing Tweak.xm…
+==&gt; Compiling Tweak.xm (arm64)…
+==&gt; Linking tweak WeChatPwdTweak (arm64)…
+clang: warning: libstdc++ is deprecated; move to libc++ with a minimum deployment target of iOS 7 [-Wdeprecated]
+==&gt; Generating debug symbols for WeChatPwdTweak…
+rm /Users/qionglinfu/Desktop/wechatpwdtweak/.theos/obj/debug/arm64/Tweak.xm.mm
+==&gt; Merging tweak WeChatPwdTweak…
+==&gt; Signing WeChatPwdTweak…
+//打包
+$ make package
+&gt; Making all for tweak WeChatPwdTweak…
+make[2]: Nothing to be done for `internal-library-compile'.
+&gt; Making stage for tweak WeChatPwdTweak…
+dm.pl: building package `com.tanzhou.wechatpwdtweak:iphoneos-arm' in `./packages/com.tanzhou.wechatpwdtweak_0.0.1-1+debug_iphoneos-arm.deb'
+//安装
+$ make install
+</code></pre>
+
+<h4 id="关于theos的坑">关于Theos的坑!!!!</h4>
+
+<ul>
+  <li>不要在中文目录下编译工程.否则报错!</li>
+  <li>
+    <p>packageName(包名称),全部小写!!!</p>
+  </li>
+  <li>打包的问题:make package</li>
+</ul>
+
+<pre><code class="language-objectivec">//压缩方式的问题
+Error: IO::Compress::lzma
+//解决方案两种:
+//1.安装xz
+$ brew install xz
+$ sudo cpan IO::Compress::Lzma
+//2. 改变压缩方式
+//2.1修改dm.pl 文件
+vim $THEOS/vendor/dm.pl/dm.pl
+//注释掉以下两句
+#use IO::Compress::Lzma;
+#use IO::Compress::Xz;
+//2.2修改deb.mk 文件
+$ vim $THEOS/makefiles/package/deb.mk
+//默认lzma修改为:
+_THEOS_PLATFORM_DPKG_DEB_COMPRESSION ?= gzip
+</code></pre>
+
+<ul>
+  <li>编译的问题</li>
+</ul>
+
+<pre><code class="language-objectivec">//make时出现
+Error: You do Not an SDK
+//解决方案
+需要指定Xcode
+安装过MonkeyDev是没问题的
+//项目有缓存
+clean 清除缓存!
+</code></pre>
+
+:ET

@@ -1,0 +1,309 @@
+I"L$<h3 id="tweak修改系统行为">Tweak修改系统行为</h3>
+
+<ul>
+  <li>分析</li>
+</ul>
+<pre><code class="language-objectivec">//系统
+/System/Library/CoreServices/SpringBoard.app/SpringBoard
+//进程依附
+$ cycript -p SpringBoard
+//查看当前VC
+$ QLCurrentVC()
+// 查看层级
+$ UIApp.keyWindow.recursiveDescription().toString
+//查找badge
+//发现SBIconParallaxBadgeView类型
+//筛选
+$ choose(SBIconParallaxBadgeView)
+//隐藏
+$ #0x1431d7060.hidden=0
+//成功～
+//Tweak思路：暴力解决直接干掉SBIconParallaxBadgeView的init方法
+</code></pre>
+
+<ul>
+  <li>编写Tweak</li>
+</ul>
+
+<pre><code class="language-objectivec">$ nic.pl
+NIC 2.0 - New Instance Creator
+------------------------------
+  [1.] iphone/activator_event
+  [2.] iphone/application_modern
+  [3.] iphone/cydget
+  [4.] iphone/flipswitch_switch
+  [5.] iphone/framework
+  [6.] iphone/ios7_notification_center_widget
+  [7.] iphone/library
+  [8.] iphone/notification_center_widget
+  [9.] iphone/preference_bundle_modern
+  [10.] iphone/tool
+  [11.] iphone/tweak
+  [12.] iphone/xpc_service
+Choose a Template (required): 11
+Project Name (required): badgeTweak
+Package Name [com.yourcompany.badgetweak]: com.bear.bage
+Author/Maintainer Name [Qionglin Fu]:
+//默认就是com.apple.springboard
+[iphone/tweak] MobileSubstrate Bundle filter [com.apple.springboard]:
+[iphone/tweak] List of applications to terminate upon installation (space-separated, '-' for none) [SpringBoard]:
+Instantiating iphone/tweak in badgetweak/...
+Done.
+
+//Makefile文件
+export THEOS_DEVICE_IP=127.0.0.1
+export THEOS_DEVICE_PORT=12345
+
+//Tweak.xm文件编写logos
+%hook SBIconParallaxBadgeView
+-(id)init
+{
+	return nil;
+}
+%end
+</code></pre>
+
+<ul>
+  <li>打包安装</li>
+</ul>
+
+<pre><code class="language-objectivec">$ make
+$ make package
+$ make install
+//看效果～～～
+
+//修改xm文件快速安装
+$ make package;make install
+//也可以直接写成脚本
+</code></pre>
+
+<pre><code class="language-objectivec">//每次生成的Tweak都需要编辑Makefile文件
+//加入环境变量即可
+$ vim ~/.bash_profile
+//添加
+export THEOS_DEVICE_IP=127.0.0.1
+export THEOS_DEVICE_PORT=12345
+//立即执行
+$ source ~/.bash_profile
+</code></pre>
+
+<h3 id="tweak原理">Tweak原理</h3>
+
+<pre><code class="language-objectivec">//查看隐藏文件
+$ ls -a
+</code></pre>
+
+<ul>
+  <li>make的时候出现一堆文件
+    <ul>
+      <li>.theos/obj/debug/badgeTweak.dylib这个动态库，就是将我们的makefile编译生成的</li>
+    </ul>
+  </li>
+  <li>如何证明注入？
+    <ul>
+      <li>makepage.此时多了deb包</li>
+      <li>install时通过端口号SSH映射安装</li>
+      <li>解压出来就是我们的动态库。放在/Library/MobileSubstrate/DynamicLibraries/</li>
+      <li>plist文件就是外面创建的.theos/obj/debug/plist</li>
+    </ul>
+  </li>
+  <li>动态库能够被加载，而且调用？
+    <ul>
+      <li>如果一个应用的二进制被修改了，注定要重签名</li>
+    </ul>
+  </li>
+  <li>dyld调用的：
+    <ul>
+      <li>注入到某个进程</li>
+      <li>插入到某个进程</li>
+    </ul>
+  </li>
+  <li>查看MachO文件不存在我们的dylib文件，通过plist里面的BundleID找到那个进程，</li>
+</ul>
+
+<h3 id="dyld_insert_libraries">DYLD_INSERT_LIBRARIES</h3>
+
+<ul>
+  <li><a href="https://opensource.apple.com/tarballs/dyld/">dyld源码</a></li>
+</ul>
+
+<pre><code class="language-objectivec">//加载任意插入的动态库
+if	( sEnv.DYLD_INSERT_LIBRARIES != NULL ) 
+{
+    //遍历所有lib
+	for (const char* const* lib = sEnv.DYLD_INSERT_LIBRARIES; *lib != NULL; ++lib) 
+		//加载
+		loadInsertedDylib(*lib);
+}
+//不能修改判断条件。系统的也会改变
+//复写DYLD_INSERT_LIBRARIES这个变量，注入动态库在app里面hook。这个代码在操作系统启动的。没有意义
+
+
+#if __MAC_OS_X_VERSION_MIN_REQUIRED
+//判断processIsRestricted进程是不是拒绝加载、插入
+//processIsRestricted为真，后面的插入动态库的事情就不再有了
+if ( gLinkContext.processIsRestricted ) 
+{
+	pruneEnvironmentVariables(envp, &amp;apple);
+	// 直接将插入的动态库移除
+	setContext(mainExecutableMH, argc, argv, envp, apple);
+}
+
+	
+//让这两个函数返回值为真
+//issetugid()在上架的app里面不能设置
+//唯一的机会在hasRestrictedSegment()
+if ( issetugid() || hasRestrictedSegment(mainExecutableMH) ) 
+{
+    gLinkContext.processIsRestricted = true;
+}
+
+
+#if __MAC_OS_X_VERSION_MIN_REQUIRED
+//遍历一个段
+static bool hasRestrictedSegment(const macho_header* mh)
+{
+	//把当前进程的MachO的头给我、指针
+	const uint32_t cmd_count = mh-&gt;ncmds;
+	const struct load_command* const cmds = (struct load_command*)(((char*)mh)+sizeof(macho_header));
+	//拿到load_command段
+	const struct load_command* cmd = cmds;
+	//遍历查找每一个段/查找
+	for (uint32_t i = 0; i &lt; cmd_count; ++i) {
+		switch (cmd-&gt;cmd) {
+			case LC_SEGMENT_COMMAND:
+			{
+				const struct macho_segment_command* seg = (struct macho_segment_command*)cmd;
+				//比较一下。如果段的名称segname是__RESTRICT
+				if (strcmp(seg-&gt;segname, "__RESTRICT") == 0) {
+					const struct macho_section* const sectionsStart = (struct macho_section*)((char*)seg + sizeof(struct macho_segment_command));
+					const struct macho_section* const sectionsEnd = &amp;sectionsStart[seg-&gt;nsects];
+					//在遍历里面的每一个值
+					for (const struct macho_section* sect=sectionsStart; sect &lt; sectionsEnd; ++sect) {
+						//判断sectionName是不是__restrict
+						if (strcmp(sect-&gt;sectname, "__restrict") == 0)
+							//如果有。return true
+							return true;
+					}
+				}
+			}
+			break;
+		}
+		cmd = (const struct load_command*)(((char*)cmd)+cmd-&gt;cmdsize);
+	}
+		
+	return false;
+}
+		
+</code></pre>
+
+<h3 id="修改restrict段防护">修改RESTRICT段防护</h3>
+
+<ul>
+  <li>Build Setting/Other Linker Flags下添加-Wl,-sectcreate,__RESTRICT,__restrict,/dev/null
+    <ul>
+      <li>创建一个section</li>
+    </ul>
+  </li>
+  <li>查看MachO多了一个RESTRICT section</li>
+  <li>此时防护的是越狱环境下的注入</li>
+</ul>
+
+<h3 id="利用二进制修改破坏防护">利用二进制修改破坏防护</h3>
+
+<ul>
+  <li>无法修改other linke flag,通过MachO修改RESTRICT段</li>
+  <li>
+    <p>我们编译的工程依赖的动态库在LoadCommands,而RESTRICT段拒绝临时插入的动态库</p>
+  </li>
+  <li>修改二进制
+    <ul>
+      <li>工具：Synalyze It！Pro</li>
+      <li>com+F 搜索restrict。随便修改一个字段即可</li>
+      <li>破坏二进制后记得重签名</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="使用dyld源码防护">使用dyld源码防护</h3>
+
+<pre><code class="language-objectivec">
+#import "ViewController.h"
+#import &lt;mach-o/loader.h&gt;
+#import &lt;mach-o/dyld.h&gt;
+
+// ARM and x86_64 are the only architecture that use cpu-sub-types
+#define CPU_SUBTYPES_SUPPORTED  ((__arm__ || __arm64__ || __x86_64__) &amp;&amp; !TARGET_IPHONE_SIMULATOR)
+
+#if __LP64__
+#define macho_header              mach_header_64
+#define LC_SEGMENT_COMMAND        LC_SEGMENT_64
+#define LC_SEGMENT_COMMAND_WRONG LC_SEGMENT
+#define LC_ENCRYPT_COMMAND        LC_ENCRYPTION_INFO
+#define macho_segment_command    segment_command_64
+#define macho_section            section_64
+#else
+
+
+#define macho_header              mach_header
+#define LC_SEGMENT_COMMAND        LC_SEGMENT
+#define LC_SEGMENT_COMMAND_WRONG LC_SEGMENT_64
+#define LC_ENCRYPT_COMMAND        LC_ENCRYPTION_INFO_64
+#define macho_segment_command    segment_command
+#define macho_section            section
+#endif
+
+
+@interface ViewController ()
+
+@end
+
+@implementation ViewController
+
+static bool hasRestrictedSegment(const struct macho_header* mh)
+{
+    const uint32_t cmd_count = mh-&gt;ncmds;
+    const struct load_command* const cmds = (struct load_command*)(((char*)mh)+sizeof(struct macho_header));
+    const struct load_command* cmd = cmds;
+    for (uint32_t i = 0; i &lt; cmd_count; ++i) {
+        switch (cmd-&gt;cmd) {
+            case LC_SEGMENT_COMMAND:
+            {
+                const struct macho_segment_command* seg = (struct macho_segment_command*)cmd;
+                
+               printf("seg name: %s\n", seg-&gt;segname);
+                if (strcmp(seg-&gt;segname, "__RESTRICT") == 0) {
+                    const struct macho_section* const sectionsStart = (struct macho_section*)((char*)seg + sizeof(struct macho_segment_command));
+                    const struct macho_section* const sectionsEnd = &amp;sectionsStart[seg-&gt;nsects];
+                    for (const struct macho_section* sect=sectionsStart; sect &lt; sectionsEnd; ++sect) {
+                        if (strcmp(sect-&gt;sectname, "__restrict") == 0)
+                            return true;
+                    }
+                }
+            }
+                break;
+        }
+        cmd = (const struct load_command*)(((char*)cmd)+cmd-&gt;cmdsize);
+    }
+    
+    return false;
+}
+
+
+
++(void)load
+{
+    //DYLD启动APP的时候,最先加载的是自己的 MachO (通过LLDB:image list 查看角标)
+    struct mach_header * header = _dyld_get_image_header(0);
+    
+    if (hasRestrictedSegment(header)) {
+        NSLog(@"防护没变化!!");
+    }else{
+        NSLog(@"改我二进制干啥??");
+        exit(0);
+    }
+    
+}
+</code></pre>
+
+:ET

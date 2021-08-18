@@ -1,0 +1,1096 @@
+I"N�<h4 id="三次握手-四次挥手">三次握手-四次挥手</h4>
+
+<ul>
+  <li>http 的传输过程
+    <ul>
+      <li>域名-&gt; ip</li>
+      <li>http tcp 三次握手</li>
+      <li>传head数据</li>
+      <li>传一段空行</li>
+      <li>传body数据</li>
+    </ul>
+  </li>
+  <li>Server封装 head+body
+    <ul>
+      <li>传head</li>
+      <li>传空行</li>
+      <li>传body</li>
+      <li>断开连接  四次挥手</li>
+    </ul>
+  </li>
+</ul>
+
+<h5 id="三次握手">三次握手</h5>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/13.jpg" alt="" /></p>
+
+<ul>
+  <li>
+    <p>SYN：同步序列编号（Synchronize Sequence Numbers）。
+Client将标志位SYN置为1，随机产生一个值seq=J
+该序列编号为TCP连接初始端(一般是客户端)的初始序列编号。在这里，可以把TCP序列编号看作是一个范围从0到4，294，967，295的32位计数器。通过TCP连接交换的数据中每一个字节都经过序列编号。在TCP报头中的序列编号栏包括了TCP分段中第一个字节的序列编号。</p>
+  </li>
+  <li>
+    <p>ACK：确认标志,确认编号(Acknowledgement Number)栏有效。大多数情况下该标志位是置位的。TCP报头内的确认编号栏内包含的确认编号(w+1，Figure-1)为下一个预期的序列编号，同时提示远端系统已经成功接收所有数据。</p>
+  </li>
+</ul>
+
+<h5 id="四次挥手">四次挥手</h5>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/14.jpg" alt="" /></p>
+
+<h4 id="ip头tcp-udp头">ip头TCP-UDP头</h4>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/15.jpg" alt="" /></p>
+
+<ul>
+  <li>
+    <p>ip表头，通常20个字节
+<img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/16.jpg" alt="" /></p>
+  </li>
+  <li>TCP表，保证可靠性</li>
+  <li>
+    <p>32位序号
+<img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/18.jpg" alt="" /></p>
+  </li>
+  <li>
+    <p>UDP，不可靠
+<img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/19.jpg" alt="" /></p>
+  </li>
+  <li>分片处理
+<img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/20.jpg" alt="" /></li>
+</ul>
+
+<h4 id="断点续传">断点续传</h4>
+
+<pre><code class="language-objectivec">#import &lt;Foundation/Foundation.h&gt;
+#import "KCDownloadNetwork.h"
+
+typedef void (^KCRequestHandleBlock)(id result,NSString* msg, NSInteger errorCode);
+
+@interface KCNetwork : NSObject
+
++ (instancetype)shared;
+
+- (NSURLSessionDataTask *)post:(NSString*)url token:(NSString*)token reqData:(NSDictionary*)params handle:(KCRequestHandleBlock)handleblock;
+
+@end
+</code></pre>
+
+<pre><code class="language-objectivec">#import "KCNetwork.h"
+
+@interface KCNetwork()<NSURLSessionDelegate>
+
+@property (nonatomic, copy) KCRequestHandleBlock handleBlock;
+@property (nonatomic, strong) NSMutableData *receivedData;
+
+@end
+
+@implementation KCNetwork
+
++ (instancetype)shared{
+    static KCNetwork *network;
+    static dispatch_once_t onceToken;
+    dispatch_once(&amp;onceToken, ^{
+        network = [[KCNetwork alloc] init];
+    });
+    return network;
+}
+
+
+- (NSURLSessionDataTask *)post:(NSString*)url token:(NSString*)token reqData:(NSDictionary*)params handle:(KCRequestHandleBlock)handleblock{
+    
+    // 校验url
+    if (!url || url.length == 0) {
+        NSLog(@"url 无效!");
+        return nil;
+    }
+    // token
+    if (!token || token.length == 0) {
+        NSLog(@"token 无效!");
+        return nil;
+    }
+    
+    // 记录回调,在任何你想要操作的地方,随时拿出来
+    self.handleBlock = handleblock;
+    
+    // 操作URL
+    NSURL *requestUrl = [NSURL URLWithString:url];
+    // 定义request 来设定请求头 -- afn  resquestSerizetion nsset
+    // https + ssl cer  token client
+    // URL :  GET
+    // post : 请求体
+    // httpbody --- httpStream afn
+    
+    NSMutableURLRequest *mRequest = [NSMutableURLRequest requestWithURL:requestUrl];
+    [mRequest setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    [mRequest setValue:token forHTTPHeaderField:@"token"];
+    // 请求方法
+    mRequest.HTTPMethod = @"POST";
+    /**
+     别回答 参数在url 后面拼接了:
+     post get 根本区别: 数据保存的 head VS body
+     */
+    // 默认60秒
+    mRequest.timeoutInterval = 30.0;
+    
+    // 请求体处理
+    mRequest.HTTPBody = [[self convertToJSONData:params] dataUsingEncoding:NSUTF8StringEncoding];
+    
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
+                                                          delegate:self
+                                                     delegateQueue:[NSOperationQueue mainQueue]];
+    
+    // session --&gt; task : id
+    //创建请求 Task 该次请求的指针 句柄 *p  dataTask
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:mRequest];
+    
+    [dataTask resume];
+    
+    return dataTask;
+    
+}
+
+#pragma mark -- NSURLSessionDataDelegate
+
+// 1.接收到服务器的响应
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler {
+    
+    completionHandler(NSURLSessionResponseAllow);
+}
+
+// 返回body 多次返回 为什么 MTU限制  TCP 包按照顺序返回
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveData:(NSData *)data {
+    
+    [self.receivedData appendData:data];
+    
+}
+
+// 任务完成时调用或者失败
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
+    
+    if(error == nil){
+        NSString* jsonString =  [[NSString alloc] initWithData:self.receivedData  encoding:NSUTF8StringEncoding];
+        id obj = [self dictionaryWithJsonString:jsonString];
+        NSLog(@"%@",obj);
+        self.handleBlock(obj, @"请求成功", 200);
+    }else{
+        self.handleBlock(nil,[self getErrCode:error.code],error.code);
+    }
+}
+
+
+
+#pragma mark - 错误代码
+
+-(NSString*)getErrCode:(NSInteger)code{
+    
+    switch (code) {
+        case 700:
+            return @"会话过期";
+            break;
+            
+        case 800:
+            return @"后台gg正常维护中";
+            break;
+            
+        case 404:
+            return @"网络连接失败";
+            break;
+            
+        case 500:
+            return @"服务器拒绝请求";
+            break;
+            
+        default:
+            break;
+    }
+    
+    return @"未知错误";
+}
+
+// json
+#pragma mark - json 序列化
+- (NSString*)convertToJSONData:(id)infoDict{
+    NSError *error;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:infoDict
+                                                       options:NSJSONWritingPrettyPrinted
+                                                         error:&amp;error];
+    NSString *jsonString = @"";
+    if (!jsonData){
+        NSLog(@"json 序列化错误: %@", error);
+    }else{
+        jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    }
+    
+    jsonString = [jsonString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    //去除掉首尾的空白字符和换行字符
+    [jsonString stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+    return jsonString;
+}
+
+#pragma mark - json 反序列化 -- json 解析
+-(NSDictionary *)dictionaryWithJsonString:(NSString *)jsonString
+{
+    if (jsonString == nil) {
+        return nil;
+    }
+    NSData *jsonData = [jsonString dataUsingEncoding:NSUTF8StringEncoding];
+    NSError *err;
+    NSDictionary *dic = [NSJSONSerialization JSONObjectWithData:jsonData
+                                                        options:NSJSONReadingMutableContainers
+                                                          error:&amp;err];
+    if(err){
+        NSLog(@"json解析失败：%@",err);
+        return nil;
+    }
+    return dic;
+}
+
+#pragma mark - lazy
+
+- (NSMutableData *)receivedData{
+    if (!_receivedData) {
+        _receivedData = [NSMutableData data];
+    }
+    return _receivedData;
+}
+
+@end
+&lt;/code&gt;&lt;/pre&gt;
+
+<pre><code class="language-objectivec">#import &lt;Foundation/Foundation.h&gt;
+
+@protocol KCDownLoadDelegate <NSObject>
+@optional
+- (void)backDownprogress:(float)progress tag:(NSInteger)tag;
+- (void)downSucceed:(NSURL*)url tag:(NSInteger)tag;
+- (void)downError:(NSError*)error tag:(NSInteger)tag;
+@end
+
+
+@interface KCDownloadNetwork : NSObject
+
+@property (nonatomic, strong) NSURLSession* session;
+@property (nonatomic, strong) NSURLSessionDownloadTask* downloadTask;
+@property (nonatomic, strong) NSData* resumeData;
+@property (nonatomic, weak) id<KCDownLoadDelegate> myDeleate;
+@property (nonatomic, assign) NSInteger tag;//某个文件下载的的标记
+
+-(void)downFile:(NSString*)fileUrl isBreakpoint:(BOOL)breakpoint;
+
+//暂停 继续 取消 文件下载
+-(void)suspendDownload;
+-(void)cancelDownload;
+
+@end
+
+&lt;/code&gt;&lt;/pre&gt;
+
+<pre><code class="language-objectivec">#import "KCDownloadNetwork.h"
+#import &lt;CommonCrypto/CommonDigest.h&gt;
+
+
+@interface KCDownloadNetwork()<NSURLSessionDelegate>
+@property (nonatomic) BOOL  mIsSuspend;
+@property (nonatomic, copy) NSString* fileName;
+@property (nonatomic, strong) NSData *myResumeData;
+
+@end
+
+@implementation KCDownloadNetwork
+
+- (void)downFile:(NSString*)fileUrl isBreakpoint:(BOOL)breakpoint{
+    
+    if (!fileUrl || fileUrl.length == 0 || ![self checkIsUrlAtString:fileUrl]) {
+        NSLog(@"fileUrl 无效");
+        return ;
+    }
+    
+//    // 判断之前是否存在
+//    // 这个地方是不是可以写成唯一的地址
+//    if ([[NSFileManager defaultManager] fileExistsAtPath:[self getTmpFileUrl]]) {
+//        [self downloadWithResumeData];
+//        return;
+//    }
+    
+    NSURL *url = [NSURL URLWithString:fileUrl];
+
+    if (!self.session) {
+        
+        //0.MD5 加密
+        self.fileName = [self md5:fileUrl];
+        
+        //1.创建NSURLSession,设置代理
+        NSURLSessionConfiguration *config = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:[self currentDateStr]];
+        // 允许蜂窝网络: 你可以做偏好设置
+        config.allowsCellularAccess = YES;
+        config.timeoutIntervalForRequest = 30;
+        //创建一个下载线程
+        self.session = [NSURLSession sessionWithConfiguration:config
+                                                     delegate:self
+                                                delegateQueue:[NSOperationQueue mainQueue]];
+    }
+
+    //2.创建task 请求句柄
+    if(breakpoint == NO){
+        self.downloadTask = [self.session downloadTaskWithURL:url];
+    }else{
+        // 断点续传
+        [self downloadWithResumeData];
+    }
+    
+    [self.downloadTask resume];
+    
+    [self saveTmpFile];
+    
+}
+
+
+#pragma mark - NSURLSessionDelegate
+//每次传一个包 调用一次该函数 512M
+-(void)URLSession:(nonnull NSURLSession *)session downloadTask:(nonnull NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite{
+
+    float dowProgeress = 1.0 * totalBytesWritten / totalBytesExpectedToWrite;
+    if (self.myDeleate &amp;&amp; [self.myDeleate respondsToSelector:@selector(backDownprogress:tag:)]) {
+        [self.myDeleate backDownprogress:dowProgeress tag:self.tag];
+    }
+    
+}
+/*
+ 2.下载完成之后调用该方法
+ */
+-(void)URLSession:(nonnull NSURLSession *)session downloadTask:(nonnull NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(nonnull NSURL *)location{
+
+    NSLog(@"location == %@",location.path);
+    
+    //拼接Doc 更换的路径
+    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,NSUserDomainMask, YES) lastObject];
+    NSString *file = [documentsPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.mp4",self.fileName]];
+    
+    //创建文件管理器
+    NSFileManager *manager = [NSFileManager defaultManager];
+    if ([manager fileExistsAtPath: file]) {
+        //如果文件夹下有同名文件  则将其删除
+        [manager removeItemAtPath:file error:nil];
+    }
+    NSError *saveError;
+    [manager moveItemAtURL:location toURL:[NSURL URLWithString:file] error:&amp;saveError];
+    
+    //将视频资源从原有路径移动到自己指定的路径
+    BOOL success = [manager copyItemAtPath:location.path toPath:file error:nil];
+    if (success) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            NSURL *url = [[NSURL alloc]initFileURLWithPath:file];
+            if(self.myDeleate &amp;&amp; [self.myDeleate respondsToSelector:@selector(downSucceed:tag:)])
+                [self.myDeleate downSucceed:url tag:self.tag];
+        });
+    }
+    //已经拷贝 删除缓存文件
+    [manager removeItemAtPath:location.path error:nil];
+    
+    [manager removeItemAtPath:[self getTmpFileUrl] error:nil];
+}
+
+//下载失败调用
+-(void)URLSession:(nonnull NSURLSession *)session task:(nonnull NSURLSessionTask *)task didCompleteWithError:(nullable NSError *)error{
+    
+    if(error &amp;&amp; self.myDeleate &amp;&amp; [self.myDeleate respondsToSelector:@selector(downError:tag:)] &amp;&amp; error.code != -999)
+        [self.myDeleate downError:error tag:self.tag];
+}
+
+- (void)URLSessionDidFinishEventsForBackgroundURLSession:(NSURLSession *)session{
+    NSLog(@"所有后台任务已经完成: %@",session.configuration.identifier);
+    
+}
+    
+
+
+#pragma mark - private
+
+//暂停下载
+-(void)suspendDownload{
+ 
+    if (self.mIsSuspend) {
+        [self.downloadTask resume];
+    }else{
+        [self.downloadTask suspend];
+    }
+    self.mIsSuspend = !self.mIsSuspend;
+}
+
+
+//取消下载
+-(void)cancelDownload{
+    
+//    [self.downloadTask cancel];
+    __weak typeof(self) weakSelf = self;
+    [self.downloadTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+       
+//        weakSelf.resumeData = resumeData;
+        weakSelf.downloadTask  = nil;
+        [resumeData writeToFile:[weakSelf getTmpFileUrl] atomically:NO];
+    }];
+    
+    
+}
+
+//断点下载
+-(void)downloadWithResumeData{
+
+    if (!self.session) {
+        return;
+    }
+    
+    NSData *data = nil;
+    
+    if (self.resumeData) {
+        data = self.resumeData;
+    }else{
+        
+        NSFileManager *fm = [NSFileManager defaultManager];
+        NSData *datas     = [fm contentsAtPath:[self getTmpFileUrl]];
+        NSString *fileStr = [[NSString alloc] initWithData:datas encoding:NSUTF8StringEncoding];
+        
+        NSLog(@"%@----%@",[self getTmpFileUrl],fileStr);
+        data = datas;
+    }
+    
+    self.downloadTask = [self.session downloadTaskWithResumeData:data];
+}
+
+//未下载完的临时文件url地址
+-(NSString*)getTmpFileUrl{
+    
+    NSString *docPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) lastObject];
+    NSString *filePath = [docPath stringByAppendingPathComponent:@"download.tmp"];
+    NSLog(@"%@",filePath);
+    
+//    NSString* url = [NSString stringWithFormat:@"/Users/LM/Desktop/%@.tmp",self.fileName];
+    return filePath;
+}
+
+//提前保存临时文件 预防下载中杀掉app
+//开启定时器
+-(void)saveTmpFile{
+    
+    [NSTimer scheduledTimerWithTimeInterval:4 repeats:YES block:^(NSTimer * _Nonnull timer) {
+       
+        [self downloadTmpFile];
+    }];
+
+}
+
+//杀掉app后 不至于下载的部分文件全部丢失，死亡处理
+- (void)downloadTmpFile{
+    __weak typeof(self) weakSelf = self;
+    [self.downloadTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+        //先保存
+        weakSelf.resumeData = resumeData;
+        weakSelf.downloadTask  = nil;
+        [resumeData writeToFile:[weakSelf getTmpFileUrl] atomically:NO];
+        //在下载
+        self.downloadTask =  [self.session downloadTaskWithResumeData:resumeData];
+        [self.downloadTask resume];
+    }];
+
+    
+}
+
+//用url获取文件名称 MD5加密
+- (NSString *)md5:(NSString *)string{
+    const char *cStr = [string UTF8String];
+    unsigned char digest[CC_MD5_DIGEST_LENGTH];
+    
+    CC_MD5(cStr, (CC_LONG)strlen(cStr), digest);
+    
+    NSMutableString *result = [NSMutableString stringWithCapacity:CC_MD5_DIGEST_LENGTH * 2];
+    for (int i = 0; i &lt; CC_MD5_DIGEST_LENGTH; i++) {
+        [result appendFormat:@"%02X", digest[i]];
+    }
+    
+    return result;
+}
+
+//获取当前时间 下载id标识用
+- (NSString *)currentDateStr{
+    NSDate *currentDate = [NSDate date];//获取当前时间，日期
+    NSTimeInterval timeInterval = [currentDate timeIntervalSince1970];
+    return [NSString stringWithFormat:@"%.f",timeInterval];
+}
+
+- (BOOL)checkIsUrlAtString:(NSString *)url {
+    NSString *pattern = @"http(s)?://([\\w-]+\\.)+[\\w-]+(/[\\w- ./?%&amp;=]*)?";
+    
+    NSRegularExpression *regex = [[NSRegularExpression alloc] initWithPattern:pattern options:0 error:nil];
+    NSArray *regexArray = [regex matchesInString:url options:0 range:NSMakeRange(0, url.length)];
+    
+    if (regexArray.count &gt; 0) {
+        return YES;
+    }else {
+        return NO;
+    }
+}
+
+- (void)dealloc
+{
+    [self.session invalidateAndCancel];
+    self.session = nil;
+    [self.downloadTask cancel];
+    self.downloadTask = nil;
+}
+
+
+
+@end
+&lt;/code&gt;&lt;/pre&gt;
+
+<pre><code class="language-objectivec">#import "ViewController.h"
+#import &lt;AVFoundation/AVFoundation.h&gt;
+#import &lt;AVKit/AVKit.h&gt;
+#import "KCNetwork.h"
+
+@interface ViewController ()<KCDownLoadDelegate>
+
+@property (weak, nonatomic) IBOutlet UIProgressView *progress;
+@property (weak, nonatomic) IBOutlet UILabel *lab1;
+@property (weak, nonatomic) IBOutlet UILabel *lab2;
+@property (weak, nonatomic) IBOutlet UILabel *msgLab;
+
+@property (weak, nonatomic) IBOutlet UILabel *proLab;
+
+@property (nonatomic, strong) KCDownloadNetwork *fileDownloadNetwork;
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view, typically from a nib.
+}
+
+- (IBAction)btnClick:(id)sender {
+    
+//    NSString *url = @"http://127.0.0.1:8080/static/123.mp4";
+    NSString *url = @"http://m.lanlingfuli.com/aif/home/getRecomm";
+    NSString *token = @"23134543223";
+    NSDictionary *para = @{@"agency":@"ios",@"pageIndex":@"1"};
+
+    // NSURLSession  ---&gt;  task  ---&gt;  id
+    // tag  ---  indextify
+    
+    [[KCNetwork shared] post:url token:token reqData:para handle:^(id result, NSString *msg, NSInteger errorCode) {
+        NSLog(@"%@",[NSThread currentThread]);
+        if (errorCode == 200) {
+            NSLog(@"result == %@",result);
+        }else{
+            
+        }
+    }];
+    
+    
+}
+
+
+//------------------------------大文件下载---------------------------------
+
+// 开始下载
+- (IBAction)startDown:(id)sender {
+    [self downFile:NO];
+}
+
+// 断点续传
+- (IBAction)breakpointContinuingly:(id)sender {
+    [self downFile:YES];
+}
+
+
+-(void)downFile:(BOOL)breakpoint{
+    
+    //172.16.127.104
+    NSString *fileUrl = @"https://pic.ibaotu.com/00/48/71/79a888piCk9g.mp4";
+
+    
+    if(self.fileDownloadNetwork == nil){
+        self.fileDownloadNetwork = [KCDownloadNetwork new];
+        self.fileDownloadNetwork.tag = 1; // 区别 不同的任务下载类型
+        self.fileDownloadNetwork.myDeleate = self;
+        //第二个参数 需要重新下载还是接着上次的下载
+    }
+    
+    // 第一次 : 没有文件
+    // 断点  :  临时文件
+    [self.fileDownloadNetwork downFile:fileUrl isBreakpoint:breakpoint];
+
+}
+
+//暂停下载
+- (IBAction)suspendedDown:(id)sender {
+    [self.fileDownloadNetwork suspendDownload];
+}
+//取消下载
+- (IBAction)cancelDown:(id)sender {
+    [self.fileDownloadNetwork cancelDownload];
+}
+
+
+
+//进度返回   每一个数据包回来调用一次
+- (void)backDownprogress:(float)progress tag:(NSInteger)tag{
+    
+    self.progress.progress = progress;
+    self.proLab.text = [NSString stringWithFormat:@"%0.1f%@",progress*100,@"%"];
+}
+
+//下载成功
+- (void)downSucceed:(NSURL*)url tag:(NSInteger)tag{
+    NSLog(@"下载成功,准备播放");
+    [self paly: url];
+    self.progress.progress = 0;
+    self.proLab.text = @"0.0%";
+    self.fileDownloadNetwork = nil;
+}
+
+//下载失败
+- (void)downError:(NSError*)error tag:(NSInteger)tag{
+    
+    self.fileDownloadNetwork = nil;
+    self.progress.progress = 0;
+    self.proLab.text = @"0.0%";
+    NSLog(@"下载失败,请再次下载 :%@",error);
+}
+
+
+
+//传入本地url 进行视频播放
+-(void)paly:(NSURL*)playUrl{
+    
+    //系统的视频播放器
+    AVPlayerViewController *controller = [[AVPlayerViewController alloc]init];
+    //播放器的播放类
+    AVPlayer * player = [[AVPlayer alloc]initWithURL:playUrl];
+    controller.player = player;
+    //自动开始播放
+    [controller.player play];
+    //推出视屏播放器
+    [self  presentViewController:controller animated:YES completion:nil];
+}
+
+@end
+&lt;/code&gt;&lt;/pre&gt;
+
+<pre><code class="language-objectivec">#import "AppDelegate.h"
+
+@interface AppDelegate ()
+@property (nonatomic, copy) NSString *identifier;
+
+@end
+
+@implementation AppDelegate
+
+
+
+- (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)(void))completionHandler{
+    
+    self.identifier = identifier;
+}
+
+- (void)applicationWillEnterForeground:(UIApplication *)application {
+    // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
+    NSLog(@"已经下载好了: %@",self.identifier);
+
+}
+
+
+
+- (void)applicationWillTerminate:(UIApplication *)application {
+    // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+    
+    NSLog(@"程序被杀死，applicationWillTerminate");
+
+}
+
+
+@end
+</code></pre>
+
+#### 文件流处理
+
+<pre><code class="language-objectivec">#import &lt;Foundation/Foundation.h&gt;
+#import &lt;UIKit/UIKit.h&gt;
+
+typedef void (^KCFileHandleBlock)(NSURL* fileUrl, NSString *progress);
+
+@interface KCFileStreamNetwork : NSObject
+
+- (NSURLSessionDataTask*)getDownFileUrl:(NSString*)fileUrl backBlock:(KCFileHandleBlock)handleBlock;
+@property(nonatomic,strong)UILabel *proLab;
+
+@end
+</code></pre>
+
+<pre><code class="language-objectivec">#import "KCFileStreamNetwork.h"
+
+@interface KCFileStreamNetwork()<NSURLSessionDelegate>
+
+@property (nonatomic, copy) KCFileHandleBlock handleBlock;
+@property (nonatomic, copy) NSString *mFileUrl;
+@property (nonatomic, strong) NSMutableData *receiveData;
+@property (nonatomic, strong) NSOutputStream *outpustream;
+@property (nonatomic, strong) NSFileHandle *fileHandle;
+
+
+@end
+
+@implementation KCFileStreamNetwork
+
+- (instancetype)init {
+    
+    if(self=[super init]){
+        _receiveData = [[NSMutableData alloc] init];
+        return self;
+    }
+    return nil;
+}
+
+- (NSURLSessionDataTask*)getDownFileUrl:(NSString*)fileUrl backBlock:(KCFileHandleBlock)handleBlock{
+    
+    if(fileUrl==nil || handleBlock==nil)  return nil;
+    
+    self.handleBlock = handleBlock;
+    //确定请求路径
+    NSURL *url0 = [NSURL URLWithString:fileUrl];
+    //创建可变请求对象
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url0];
+    request.HTTPMethod = @"GET";
+    request.timeoutInterval = 30.0;
+    
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
+                                                          delegate:self
+                                                     delegateQueue:[NSOperationQueue   mainQueue]];
+    
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request];
+    //发送请求
+    [dataTask resume];
+    
+    return dataTask;
+    
+}
+
+
+NSInteger fileDownPro = 0;
+NSInteger fileTotalPro = 0;
+#pragma mark -- NSURLSessionDataDelegate// 1.接收到服务器的响应
+//接受的http的 head数据
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler {
+    
+    fileTotalPro = response.expectedContentLength;//字节
+    completionHandler(NSURLSessionResponseAllow);
+}
+
+// 2.接收到http 的body数据
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveData:(NSData *)data {
+    
+    //这样会造成内存暴增
+    //[self.receiveData appendData:data];
+    
+    //创建流，append为YES的话，每次写入都是追加到文件尾部
+    self.outpustream = [NSOutputStream outputStreamToFileAtPath:[self getSaveFilePath] append:YES];
+
+    //一点一点的存 细水流长
+    dispatch_async(dispatch_get_global_queue(0, 0), ^{
+//        [self saveFile:data];
+        [self.outpustream open];
+        [self.outpustream write:data.bytes maxLength:data.length];
+        [self.outpustream close];
+    });
+    
+    fileDownPro  = fileDownPro +  data.length;
+    float downPro = fileDownPro/(fileTotalPro*1.0)*100;
+    NSString *progress = [NSString stringWithFormat:@"%.2f%@",downPro,@"%"];
+    self.handleBlock(nil, progress);
+}
+
+// 3.3.任务完成时调用
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
+    
+    NSLog(@"下载完成");
+    
+    if (!error) {
+//        [self.receiveData writeToFile:[self getSaveFilePath] atomically:YES];
+    }
+}
+
+- (void)saveFile:(NSData *)data {
+    //保存文件的路径
+    NSString *filePath = [self getSaveFilePath];
+    //如果文件不存在，返回的是nil
+    NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:filePath];
+    //判断文件存不存在
+    if (fileHandle == nil) {
+        //如果文件不存在，会自动创建
+        [data writeToFile:filePath atomically:YES];
+    }else {
+        //让offset指向文件的末尾
+        [fileHandle seekToEndOfFile];
+        //在文件的末尾再继续写入文件
+        [fileHandle writeData:data];
+        // 同步一下防止操作混乱
+        [fileHandle synchronizeFile];
+        //关闭文件
+        [fileHandle closeFile];
+    }
+}
+
+- (NSString *)getSaveFilePath{
+    
+    NSString *filePath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:@"video.mp4"];
+    if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
+        [[NSFileManager defaultManager] createFileAtPath:filePath contents:nil attributes:nil];
+    }
+    return filePath;
+}
+
+
+@end
+&lt;/code&gt;&lt;/pre&gt;
+
+<pre><code class="language-objectivec">#import "ViewController.h"
+#import "KCFileStreamNetwork.h"
+
+@interface ViewController ()
+@property (weak, nonatomic) IBOutlet UILabel *progressLabel;
+
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view, typically from a nib.
+}
+
+
+//文件流下载
+- (IBAction)fileSteamBtn:(id)sender {
+    
+    __weak typeof(self) weakSelf = self;
+    
+    KCFileStreamNetwork *fileStream = [KCFileStreamNetwork new];
+    [fileStream  getDownFileUrl:@"https://pic.ibaotu.com/00/48/71/79a888piCk9g.mp4" backBlock:^(NSURL *fileUrl,NSString *progress) {
+        weakSelf.progressLabel.text = progress;
+        if (fileUrl) {
+            NSLog(@"文件路径:%@",[fileUrl absoluteString]);
+        }
+    }];
+    
+}
+
+- (IBAction)editFileBtn:(id)sender {
+    
+    NSString* filePath =  @"/Users/LM/Desktop/data.txt";
+    NSFileManager* fm = [NSFileManager defaultManager];
+    NSData* fileData =  [fm contentsAtPath:filePath];
+    
+    NSFileHandle *fielHandle = [NSFileHandle fileHandleForUpdatingAtPath:filePath];
+    //[fielHandle seekToFileOffset:2];
+    [fielHandle seekToEndOfFile];
+    NSString *str = @"你好";
+    NSData* stringData = [str dataUsingEncoding:NSUTF8StringEncoding];
+    
+    [fielHandle writeData:stringData];
+    [fielHandle closeFile];
+    
+}
+
+@end
+</code></pre>
+
+
+
+
+#### 网络抓包
+
+* 请求格式
+    ![](https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/12.jpg)
+
+<pre><code class="language-objectivec">#import "KCNetwork.h"
+
+typedef void (^KCRequestHandleBlock)(id result,NSString* msg, NSInteger errorCode);
+
+@interface KCNetwork()<NSURLSessionDelegate>
+
+@property (nonatomic, copy) KCRequestHandleBlock handleBlock;
+@property (nonatomic, strong) NSMutableData *receivedData;
+
+@end
+
+@implementation KCNetwork
+
++ (instancetype)shared{
+    static KCNetwork *network;
+    static dispatch_once_t onceToken;
+    dispatch_once(&amp;onceToken, ^{
+        network = [[KCNetwork alloc] init];
+    });
+    return network;
+}
+
+
+- (NSURLSessionDataTask *)post:(NSString*)url token:(NSString*)token reqData:(NSDictionary*)params handle:(KCRequestHandleBlock)handleblock{
+    
+    // 校验url
+    if (!url || url.length == 0) {
+        NSLog(@"url 无效!");
+        return nil;
+    }
+    // token
+    if (!token || token.length == 0) {
+        NSLog(@"token 无效!");
+        return nil;
+    }
+    // 记录回调,在任何你想要操作的地方,随时拿出来
+    self.handleBlock = handleblock;
+    
+    // 操作URL
+    NSURL *requestUrl = [NSURL URLWithString:url];
+    // 定义request 来设定请求头
+    NSMutableURLRequest *mRequest = [NSMutableURLRequest requestWithURL:requestUrl];
+    [mRequest setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    [mRequest setValue:token forHTTPHeaderField:@"token"];
+    // 请求方法
+    mRequest.HTTPMethod = @"POST";
+    /**
+     别回答 参数在url 后面拼接了:
+     post get 根本区别: 数据保存的 head VS body
+     */
+    // 默认60秒
+    mRequest.timeoutInterval = 30.0;
+    
+    // 请求体处理
+    mRequest.HTTPBody = [[self convertToJSONData:params] dataUsingEncoding:NSUTF8StringEncoding];
+    
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
+                                                          delegate:self
+                                                     delegateQueue:[NSOperationQueue mainQueue]];
+    
+    //创建请求 Task 该次请求的指针 句柄 *p  dataTask
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:mRequest];
+    
+    [dataTask resume];
+    
+    return dataTask;
+    
+}
+
+#pragma mark -- NSURLSessionDataDelegate
+
+// 1.接收到服务器的响应
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler {
+    
+    completionHandler(NSURLSessionResponseAllow);
+}
+
+// 返回body 多次返回 为什么 MTU限制  TCP 包按照顺序返回
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveData:(NSData *)data {
+    
+    [self.receivedData appendData:data];
+    
+}
+
+// 任务完成时调用或者失败
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
+    
+    if(error == nil){
+        NSString* jsonString =  [[NSString alloc] initWithData:self.receivedData  encoding:NSUTF8StringEncoding];
+        id obj = [self dictionaryWithJsonString:jsonString];
+        NSLog(@"%@",obj);
+        self.handleBlock(obj, @"请求成功", 200);
+    }else{
+        self.handleBlock(nil,[self getErrCode:error.code],error.code);
+    }
+}
+
+
+
+#pragma mark - 错误代码
+
+-(NSString*)getErrCode:(NSInteger)code{
+    
+    switch (code) {
+        case 700:
+            return @"会话过期";
+            break;
+            
+        case 800:
+            return @"后台gg正常维护中";
+            break;
+            
+        case 404:
+            return @"网络连接失败";
+            break;
+            
+        case 500:
+            return @"服务器拒绝请求";
+            break;
+            
+        default:
+            break;
+    }
+    
+    return @"未知错误";
+}
+
+#pragma mark - json 序列化
+- (NSString*)convertToJSONData:(id)infoDict{
+    NSError *error;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:infoDict
+                                                       options:NSJSONWritingPrettyPrinted
+                                                         error:&amp;error];
+    NSString *jsonString = @"";
+    if (!jsonData){
+        NSLog(@"json 序列化错误: %@", error);
+    }else{
+        jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    }
+    
+    jsonString = [jsonString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    //去除掉首尾的空白字符和换行字符
+    [jsonString stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+    return jsonString;
+}
+
+#pragma mark - json 反序列化 -- json 解析
+-(NSDictionary *)dictionaryWithJsonString:(NSString *)jsonString
+{
+    if (jsonString == nil) {
+        return nil;
+    }
+    NSData *jsonData = [jsonString dataUsingEncoding:NSUTF8StringEncoding];
+    NSError *err;
+    NSDictionary *dic = [NSJSONSerialization JSONObjectWithData:jsonData
+                                                        options:NSJSONReadingMutableContainers
+                                                          error:&amp;err];
+    if(err){
+        NSLog(@"json解析失败：%@",err);
+        return nil;
+    }
+    return dic;
+}
+
+#pragma mark - lazy
+
+- (NSMutableData *)receivedData{
+    if (!_receivedData) {
+        _receivedData = [NSMutableData data];
+    }
+    return _receivedData;
+}
+
+@end
+&lt;/code&gt;&lt;/pre&gt;
+
+
+
+</NSURLSessionDelegate></code></pre></NSURLSessionDelegate></code></pre></KCDownLoadDelegate></code></pre></NSURLSessionDelegate></code></pre></KCDownLoadDelegate></NSObject></code></pre></NSURLSessionDelegate></code></pre>
+:ET

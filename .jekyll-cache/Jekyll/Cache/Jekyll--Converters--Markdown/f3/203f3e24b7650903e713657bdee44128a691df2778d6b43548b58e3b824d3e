@@ -1,0 +1,498 @@
+I"�.<h3 id="函数的定义">函数的定义</h3>
+
+<ul>
+  <li>
+    <p>形参默认是let，也只能是let</p>
+
+    <pre><code class="language-objective-c">func pi() -&gt; Double { return 3.14
+}
+func sum(v1: Int, v2: Int) -&gt; Int {
+    return v1 + v2
+}
+sum(v1: 10, v2: 20)
+</code></pre>
+  </li>
+  <li>
+    <p>无返回值</p>
+
+    <pre><code class="language-objective-c">func sayHello() -&gt; Void {
+    print("Hello")
+}
+func sayHello() -&gt; () {
+    print("Hello")
+}
+func sayHello() {
+    print("Hello")
+}
+</code></pre>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="隐式返回implicit-return">隐式返回(Implicit Return)</h3>
+
+<ul>
+  <li>
+    <p>如果整个函数体是一个单一表达式，那么函数会隐式返回这个表达式</p>
+
+    <pre><code class="language-objective-c">func sum(v1: Int, v2: Int) -&gt; Int {
+    v1 + v2
+}
+sum(v1: 10, v2: 20) // 30
+</code></pre>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="返回元组-实现多返回值">返回元组 ：实现多返回值</h3>
+
+<pre><code class="language-objective-c">func calculate(v1: Int, v2: Int) -&gt; (sum: Int, difference: Int, average: Int) {
+    let sum = v1 + v2
+    return (sum, v1 - v2, sum &gt;&gt; 1)
+}
+let result = calculate(v1: 20, v2: 10)
+result.sum // 30
+result.difference // 10
+result.average // 15
+</code></pre>
+
+<hr />
+
+<h3 id="函数的文档注释">函数的文档注释</h3>
+
+<ul>
+  <li>
+    <p><a href="https://swift.org/documentation/api-design-guidelines/">参考链接</a></p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/// 求和【概述】
+///
+/// 将2个整数相加【更详细的描述】
+///
+/// - Parameter v1: 第1个整数
+/// - Parameter v2: 第2个整数
+/// - Returns: 2个整数的和
+///
+/// - Note:传入2个整数即可【批注】
+///
+func sum(v1: Int, v2: Int) -&gt; Int {
+    v1 + v2
+}
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="参数标签argument-label">参数标签(Argument Label)</h3>
+
+<ul>
+  <li>
+    <p>可以修改参数标签</p>
+
+    <pre><code class="language-objective-c">func goToWork(at time: String) {
+    print("this time is \(time)")
+}
+goToWork(at: "08:00")
+// this time is 08:00
+</code></pre>
+  </li>
+  <li>
+    <p>可以使用下划线 <strong>_</strong> 省略参数标签</p>
+
+    <pre><code class="language-objective-c">func sum(_ v1: Int, _ v2: Int) -&gt; Int {
+    v1 + v2
+}
+sum(10, 20)
+</code></pre>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="默认参数值default-parameter-value">默认参数值(Default Parameter Value)</h3>
+
+<ul>
+  <li>
+    <p>参数可以有默认值</p>
+
+    <pre><code class="language-objective-c">func check(name: String = "nobody", age: Int, job: String = "none") {
+    print("name=\(name), age=\(age), job=\(job)")
+}
+check(name: "Jack", age: 20, job: "Doctor") // name=Jack, age=20, job=Doctor
+check(name: "Rose", age: 18) // name=Rose, age=18, job=none
+check(age: 10, job: "Batman") // name=nobody, age=10, job=Batman
+check(age: 15) // name=nobody, age=15, job=none
+</code></pre>
+  </li>
+  <li>
+    <p>C++的默认参数值有个限制:必须从右往左设置。由于Swift拥有参数标签，因此并没有此类限制 n</p>
+  </li>
+  <li>
+    <p>但是在省略参数标签时，需要特别注意，避免出错</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// 这里的middle不可以省略参数标签
+func test(_ first: Int = 10, middle: Int, _ last: Int = 30) { }
+test(middle: 20)
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="可变参数variadic-parameter">可变参数(Variadic Parameter)</h3>
+
+<ul>
+  <li>
+    <p>一个函数最多只能有1个可变参数</p>
+
+    <pre><code class="language-objective-c">func sum(_ numbers: Int...) -&gt; Int {
+    var total = 0
+    for number in numbers {
+        total += number
+    }
+    return total
+}
+sum(10, 20, 30, 40) // 100
+</code></pre>
+  </li>
+  <li>
+    <p>紧跟在可变参数后面的参数不能省略参数标签</p>
+
+    <pre><code class="language-objective-c">// 参数string不能省略标签
+func test(_ numbers: Int..., string: String, _ other: String) { }
+test(10, 20, 30, string: "Jack", "Rose")
+</code></pre>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="swift自带的print函数">Swift自带的print函数</h3>
+
+<pre><code class="language-objective-c">/// - Parameters:
+///   - items: Zero or more items to print.
+///   - separator: A string to print between each item. The default is a single
+///     space (`" "`).
+///   - terminator: The string to print after all items have been printed. The
+///     default is a newline (`"\n"`).
+public func print(_ items: Any..., separator: String = " ", terminator: String = "\n")
+
+print(1, 2, 3, 4, 5) // 1 2 3 4 5
+print(1, 2, 3, 4, 5, separator: "_") // 1_2_3_4_5
+print("My name is Jake.", terminator: "")
+print("My age is 18.") // My name is Jake.My age is 18.
+</code></pre>
+
+<hr />
+
+<h3 id="输入输出参数in-out-parameter">输入输出参数(In-Out Parameter)</h3>
+
+<ul>
+  <li>可以用inout定义一个输入输出参数 : 可以在函数内部修改外部实参的值</li>
+  <li>可变参数不能标记为inout
+    <ul>
+      <li>inout参数不能有默认值</li>
+      <li>inout参数只能传入可以被多次赋值的</li>
+      <li>inout参数的本质是地址传递(引用传递)</li>
+    </ul>
+  </li>
+</ul>
+
+<pre><code class="language-objective-c">func swapValues(_ v1: inout Int, _ v2: inout Int) {
+    let tmp = v1
+    v1 = v2
+    v2 = tmp
+}
+var num1 = 10
+var num2 = 20
+swapValues(&amp;num1, &amp;num2)
+  
+func swapValues(_ v1: inout Int, _ v2: inout Int) {
+    (v1, v2) = (v2, v1)
+}
+</code></pre>
+
+<hr />
+
+<h3 id="函数重载function-overload">函数重载(Function Overload)</h3>
+
+<ul>
+  <li>规则
+    <ul>
+      <li>函数名相同</li>
+      <li>
+        <table>
+          <tbody>
+            <tr>
+              <td>参数个数不同</td>
+              <td> </td>
+              <td>参数类型不同</td>
+              <td> </td>
+              <td>参数标签不同</td>
+            </tr>
+          </tbody>
+        </table>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<pre><code class="language-objective-c">func sum(v1: Int, v2: Int) -&gt; Int {
+    v1 + v2
+}
+
+func sum(v1: Int, v2: Int, v3: Int) -&gt; Int {
+    v1 + v2 + v3
+} // 参数个数不同
+
+func sum(v1: Int, v2: Double) -&gt; Double {
+    Double(v1) + v2
+} // 参数类型不同
+
+func sum(v1: Double, v2: Int) -&gt; Double {
+    v1 + Double(v2)
+} // 参数类型不同
+
+func sum(_ v1: Int, _ v2: Int) -&gt; Int {
+    v1 + v2
+} // 参数标签不同
+
+func sum(a: Int, b: Int) -&gt; Int {
+    a+b
+} // 参数标签不同
+
+
+sum(v1: 10, v2: 20) // 30
+sum(v1: 10, v2: 20, v3: 30) // 60
+sum(v1: 10, v2: 20.0) // 30.0
+sum(v1: 10.0, v2: 20) // 30.0
+sum(10, 20) // 30
+sum(a: 10, b: 20) // 30
+</code></pre>
+
+<h3 id="函数重载注意点">函数重载注意点</h3>
+
+<ul>
+  <li>
+    <p>返回值类型与函数重载无关</p>
+
+    <p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/Swift5/000016.jpg" alt="" /></p>
+  </li>
+  <li>
+    <p>默认参数值和函数重载一起使用产生二义性时，编译器并不会报错(在C++中会报错)</p>
+
+    <pre><code class="language-objective-c">func sum(v1: Int, v2: Int) -&gt; Int {
+    v1 + v2
+}
+  
+func sum(v1: Int, v2: Int, v3: Int = 10) -&gt; Int {
+    v1 + v2 + v3
+}
+// 会调用sum(v1: Int, v2: Int)
+sum(v1: 10, v2: 20)
+</code></pre>
+  </li>
+  <li>
+    <p>可变参数、省略参数标签、函数重载一起使用产生二义性时，编译器有可能会报错</p>
+
+    <pre><code class="language-objective-c">func sum(v1: Int, v2: Int) -&gt; Int {
+    v1 + v2
+}
+  
+func sum(_ v1: Int, _ v2: Int) -&gt; Int {
+    v1 + v2
+}
+  
+func sum(_ numbers: Int...) -&gt; Int {
+    var total = 0
+    for number in numbers {
+        total += number
+    }
+    return total
+}
+// error: ambiguous use of 'sum'
+sum(10, 20)
+</code></pre>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="内联函数inline-function">内联函数(Inline Function)</h3>
+
+<ul>
+  <li>
+    <p>如果开启了编译器优化(Release模式默认会开启优化)，编译器会自动将某些函数变成内联函数</p>
+
+    <ul>
+      <li>
+        <p>将函数调用展开成函数体</p>
+
+        <p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/Swift5/000017.jpg" alt="" /></p>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>哪些函数不会被自动内联?</p>
+
+    <ul>
+      <li>函数体比较长</li>
+      <li>包含递归调用</li>
+      <li>包含动态派发</li>
+    </ul>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="inline">@inline</h3>
+
+<ul>
+  <li>
+    <p>在Release模式下，编译器已经开启优化，会自动决定哪些函数需要内联，因此没必要使用@inline</p>
+
+    <pre><code class="language-objective-c">// 永远不会被内联(即使开启了编译器优化)
+@inline(never) func test() {
+    print("test")
+}
+  
+// 开启编译器优化后，即使代码很长，也会被内联(递归调用函数、动态派发的函数除外)
+@inline(__always) func test() {
+    print("test")
+}
+</code></pre>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="函数类型function-type">函数类型(Function Type)</h3>
+
+<ul>
+  <li>
+    <p>每一个函数都是有类型的，函数类型由形式参数类型、返回值类型组成</p>
+
+    <pre><code class="language-objective-c">func test() { } // () -&gt; Void 或者 () -&gt; ()
+func sum(a: Int, b: Int) -&gt; Int {
+    a+b
+} // (Int, Int) -&gt; Int
+  
+// 定义变量
+var fn: (Int, Int) -&gt; Int = sum
+fn(2, 3) // 5，调用时不需要参数标签
+</code></pre>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="函数类型作为函数参数">函数类型作为函数参数</h3>
+
+<pre><code class="language-objective-c">func sum(v1: Int, v2: Int) -&gt; Int {
+    v1 + v2
+}
+
+func difference(v1: Int, v2: Int) -&gt; Int {
+    v1 - v2
+}
+
+func printResult(_ mathFn: (Int, Int) -&gt; Int, _ a: Int, _ b: Int) {
+    print("Result: \(mathFn(a, b))")
+}
+
+printResult(sum, 5, 2) // Result: 7
+printResult(difference, 5, 2) // Result: 3
+</code></pre>
+
+<hr />
+
+<h3 id="函数类型作为函数返回值">函数类型作为函数返回值</h3>
+
+<ul>
+  <li>
+    <p>返回值是函数类型的函数，叫做高阶函数(Higher-Order Function)</p>
+
+    <pre><code class="language-objective-c">func next(_ input: Int) -&gt; Int {
+    input + 1
+}
+  
+func previous(_ input: Int) -&gt; Int {
+    input - 1
+}
+  
+func forward(_ forward: Bool) -&gt; (Int) -&gt; Int {
+    forward ? next : previous
+}
+  
+forward(true)(3) // 4
+forward(false)(3) // 2
+</code></pre>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="typealias">typealias</h3>
+
+<ul>
+  <li>
+    <p><strong>typealias</strong>用来给类型起别名</p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>typealias Byte = Int8
+typealias Short = Int16
+typealias Long = Int64
+typealias Date = (year: Int, month: Int, day: Int)
+func test(_ date: Date) {
+    print(date.0)
+    print(date.year)
+}
+test((2011, 9, 10))
+</code></pre></div>    </div>
+
+    <pre><code class="language-objective-c">typealias IntFn = (Int, Int) -&gt; Int
+  
+func difference(v1: Int, v2: Int) -&gt; Int {
+    v1 - v2
+}
+let fn: IntFn = difference
+fn(20, 10) // 10
+  
+func setFn(_ fn: IntFn) { }
+setFn(difference)
+func getFn() -&gt; IntFn { difference }
+</code></pre>
+  </li>
+  <li>
+    <p>按照Swift标准库的定义，<strong>Void</strong>就是空元组()</p>
+
+    <pre><code class="language-objective-c">public typealias Void = ()
+</code></pre>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="嵌套函数nested-function">嵌套函数(Nested Function)</h3>
+
+<ul>
+  <li>
+    <p>将函数定义在函数内部</p>
+
+    <pre><code class="language-objective-c">func forward(_ forward: Bool) -&gt; (Int) -&gt; Int {
+    func next(_ input: Int) -&gt; Int {
+        input + 1
+    }
+    func previous(_ input: Int) -&gt; Int {
+        input - 1
+    }
+    return forward ? next : previous
+}
+forward(true)(3) // 4
+forward(false)(3) // 2
+</code></pre>
+  </li>
+</ul>
+
+:ET

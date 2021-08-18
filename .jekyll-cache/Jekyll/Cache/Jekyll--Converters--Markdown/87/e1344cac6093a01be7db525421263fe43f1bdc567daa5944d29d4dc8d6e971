@@ -1,0 +1,160 @@
+I"<p>三个层次：底层网、中间层网、主干网，
+底层网为大学校园网或企业网，
+中间层网为地区网络和商用网络，
+最高层为主干网，一般由国家或大型公司投资组建，目前美国高级网络服务（Advanced Network Services,ANS）公司所建设的ANSNET为因特网的主干网。</p>
+
+<p>万维网（world wide web）</p>
+
+<ul>
+  <li>URL:（统一资源定位符）
+    <ul>
+      <li>URL 的全称是 Uniform Resource Locator 通过 1 个URL，能找到互联网上唯一的 1 个资源</li>
+      <li>URL 就是资源的地址、位置，互联网上的每个资源都有一个唯一的 URL</li>
+    </ul>
+  </li>
+  <li>基本格式
+    <ul>
+      <li>：协议头://主机地址/路径</li>
+      <li>file:/// 没有主机 三个 “/”</li>
+      <li>协议头：不同的协议，表示不同的资源查找及传输方式</li>
+      <li>主机地址：存放资源主机的 IP 地址（域名）</li>
+      <li><em>**</em>路径：资源在主机中的具体位置</li>
+    </ul>
+  </li>
+</ul>
+
+<p>NSURLSession是NSURLConnection 的替代者，在2013年苹果全球开发者大会（WWDC2013）随ios7一起发布，是对NSURLConnection进行了重构优化后的新的网络访问接口。从iOS9.0开始， NSURLConnection中发送请求的两个方法已过期（同步请求，异步请求），初始化网络连接（initWithRequest: delegate:）的方法也被设置为过期，系统不再推荐使用，建议使用NSURLSession发送网络请求。</p>
+
+<p>封装 : session 
+CFNetwork : 性能很强  管理太多</p>
+
+<p>Localhost:本地回环地址</p>
+
+<pre><code class="language-objectivec">ping 127.0.0.1
+</code></pre>
+
+<ul>
+  <li>协议<图解http>
+</图解http>    <ul>
+      <li>https</li>
+      <li>http +ssl</li>
+      <li>ftp ascall 二进制</li>
+      <li>file 本地传输</li>
+      <li>Tel: openUrl:tel</li>
+      <li>sms</li>
+    </ul>
+  </li>
+</ul>
+
+<h4 id="基础">基础</h4>
+
+<ul>
+  <li>带宽 : 数据量/s  bit (1字节byte = 8bit)</li>
+</ul>
+
+<pre><code class="language-objectivec">1MB/S = 1024 KB/S(1024*1024b/s)  = 1024 / 8 kb/s = 128 kb/s
+</code></pre>
+
+<ul>
+  <li>
+    <p>Accept-Ranges: WEB服务器表明自己是否接受获取其某个实体的一部分（比如文件的一部分）的请求。bytes：表示接受，none：表示不接受。</p>
+  </li>
+  <li>
+    <p>Cache-Control : 这个字段用于指定所有缓存机制在整个请求/响应链中必须服从的指令</p>
+
+    <pre><code class="language-objectivec">private、no-cache、max-age、must-revalidate
+</code></pre>
+  </li>
+  <li>
+    <p>Connection : 启用Keep-Alive模式肯定更高效，性能更高。因为避免了建立/释放连接的开销</p>
+
+    <pre><code class="language-objectivec">Content-Length : 内容长度
+</code></pre>
+  </li>
+  <li>
+    <p>Content-Type: 表示后面的文档属于什么MIME类型。Servlet默认为text/plain，—&gt; 联想到manager.responserSerilizer 的类型</p>
+  </li>
+  <li>
+    <p>Date : GMT 格林尼治是英国伦敦南郊原皇家格林尼治天文台所在地，地球本初子午线的标界处，世界计算时间和经度的起点</p>
+
+    <pre><code class="language-objectivec">格林尼治 0时  东八区 北京 8：00am
+</code></pre>
+  </li>
+  <li>
+    <p>重定向 :  service :  图片 (hook 网络攻击)</p>
+  </li>
+  <li>
+    <p>Etag : 实体标签，用来帮助服务器控制Web端的缓存验证。</p>
+  </li>
+  <li>Last-Modified : //请求的资源的最后被修改的时间
+    <ul>
+      <li>浏览器会向服务器传送If-Modified-Since报头，询问该时间之后文件是否有被修改</li>
+    </ul>
+  </li>
+  <li>
+    <p>P3p : 是一种被称为个人隐私安全平台项目（the Platform for Privacy Preferences）的标准，能够保护在线隐私权，使Internet冲浪者可以选择在浏览网页时，是否被第三方收集并利用自己的个人信息。如果一个站点不遵守P3P标准的话，那么有关它的Cookies将被自动拒绝，并且P3P还能够自动识破多种Cookies的嵌入方式</p>
+  </li>
+  <li>
+    <p>Set-Cookie : “BD_NOT_HTTPS=1; path=/; Max-Age=300” 对我们的请求有大大的降低压力的作用</p>
+  </li>
+  <li>IP 地址是一个 32 位的二进制数，通常被分割为 8 位二进制数，通常用点分 10 进制表示</li>
+</ul>
+
+<pre><code class="language-objectivec">IP 14.215.1777.39
+</code></pre>
+
+<ul>
+  <li>域名 ：方便用户记忆，如baidu</li>
+  <li>
+    <p>DNS : 域名解析器，通过域名拿到IP，然后去IP中心处理校验等操作</p>
+  </li>
+  <li>端口号: 标示进程(程序)的逻辑地址，不同进程(程序)的标示
+    <ul>
+      <li>端口取值范围：0~65535 = 2^16-1</li>
+      <li>端口的分类
+        <ul>
+          <li>公认端口（Well Known Ports）
+            <ul>
+              <li>这类端口也常称之为”常用端口”</li>
+              <li>这类端口的端口号从 0 到 1024，它们紧密绑定于一些特定的服务</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li>通常这些端口的通信明确表明了某种服务的协议，这种端口是不可再重新定义它的作用对象。比如：</li>
+    </ul>
+
+    <pre><code class="language-objectivec">http 默认 80
+https 默认 443  (SVN)
+ftp 默认 21
+pop3 110 (收邮件)
+smtp 25  (发邮件)
+</code></pre>
+  </li>
+  <li>注册端口（Registered Ports）
+    <ul>
+      <li>端口号从1025到49151</li>
+      <li>分配给用户进程或应用程序</li>
+      <li>这些进程主要是用户选择安装的一些应用程序，而不是已经分配好了公认端口的常用程序</li>
+      <li>动态和/或私有端口（Dynamic and/or Private Ports）
+        <ul>
+          <li>端口号从 49152 到 65535</li>
+          <li>之所以称为动态端口，是因为它 一般不固定分配某种服务，而是动态分配</li>
+        </ul>
+      </li>
+      <li>开发中不要使用 1024 以下的端口</li>
+    </ul>
+  </li>
+</ul>
+
+<h4 id="python服务器"><a href="https://github.com/QionglinFu1024/QLTools/blob/master/网络/Python服务器.pdf">python服务器</a></h4>
+
+<h4 id="osi七层">OSI七层</h4>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/%E6%BD%AD%E5%B7%9E/%E5%A4%9A%E7%BA%BF%E7%A8%8B/11.jpg" alt="" /></p>
+
+<h4 id="网络抓包请求体">网络抓包请求体</h4>
+
+<p>Charles</p>
+
+:ET

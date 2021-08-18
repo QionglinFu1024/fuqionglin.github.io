@@ -1,0 +1,17 @@
+I"9<h3 id="nsurlprotocol">NSURLProtocol</h3>
+<ul>
+  <li>作用
+    <ul>
+      <li>忽略网络请求使用本地缓存</li>
+      <li>重定向网络请求</li>
+      <li>改变request的请求头</li>
+    </ul>
+  </li>
+  <li>使用
+    <ul>
+      <li>子类</li>
+      <li>实现方法</li>
+    </ul>
+  </li>
+</ul>
+:ET

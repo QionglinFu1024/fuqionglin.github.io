@@ -1,0 +1,417 @@
+I"'&<h3 id="继承inheritance">继承(Inheritance)</h3>
+
+<ul>
+  <li>n 值类型(枚举、结构体)不支持继承，只有类支持继承</li>
+  <li>没有父类的类，称为:基类</li>
+  <li>Swift并没有像OC、Java那样的规定:任何类最终都要继承自某个基类</li>
+  <li>子类可以重写父类的下标、方法、属性，重写必须加上override关键字</li>
+</ul>
+
+<hr />
+
+<h3 id="内存结构">内存结构</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Animal {
+    var age = 0
+}
+class Dog : Animal {
+    var weight = 0
+}
+class ErHa : Dog {
+    var iq = 0
+}
+
+let a = Animal()
+a.age = 10
+// 32
+print(Mems.size(ofRef: a))
+/*
+0x00000001000073e0
+0x0000000000000002
+0x000000000000000a
+0x0000000000000000
+*/
+print(Mems.memStr(ofRef: a))
+
+
+
+let d = Dog()
+d.age = 10
+d.weight = 20
+// 32
+print(Mems.size(ofRef: d))
+/*
+ 0x0000000100007490
+ 0x0000000000000002
+ 0x000000000000000a
+ 0x0000000000000014
+ */
+print(Mems.memStr(ofRef: d))
+
+
+
+let e = ErHa()
+e.age = 10
+e.weight = 20
+e.iq = 30
+// 48
+print(Mems.size(ofRef: e))
+/*
+ 0x0000000100007560
+ 0x0000000000000002
+ 0x000000000000000a
+ 0x0000000000000014
+ 0x000000000000001e
+ 0x0000000000000000
+ */
+print(Mems.memStr(ofRef: e))
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="重写实例方法下标">重写实例方法、下标</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Animal {
+    func speak() {
+        print("Animal speak")
+    }
+    subscript(index: Int) -&gt; Int {
+        return index
+    }
+}
+
+class Cat : Animal {
+    override func speak() {
+        super.speak()
+        print("Cat speak")
+    }
+    override subscript(index: Int) -&gt; Int {
+        return super[index] + 1
+    }
+}
+
+var anim: Animal
+anim = Animal()
+// Animal speak
+anim.speak()
+// 6
+print(anim[6])
+
+anim = Cat()
+// Animal speak
+// Cat speak
+anim.speak()
+// 7
+print(anim[6])
+</code></pre></div></div>
+
+<ul>
+  <li>被class修饰的类型方法、下标，允许被子类重写</li>
+  <li>被static修饰的类型方法、下标，不允许被子类重写</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Animal {
+    class func speak() {
+        print("Animal speak")
+    }
+    class subscript(index: Int) -&gt; Int {
+        return index
+    }
+}
+// Animal speak
+Animal.speak()
+// 6
+print(Animal[6])
+
+class Cat : Animal {
+    override class func speak() {
+        super.speak()
+        print("Cat speak")
+    }
+    override class subscript(index: Int) -&gt; Int {
+        return super[index] + 1
+    }
+}
+// Animal speak
+// Cat speak
+Cat.speak()
+// 7
+print(Cat[6])
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="重写属性">重写属性</h3>
+
+<ul>
+  <li>子类可以将父类的属性(存储、计算)重写为<strong>计算属性</strong></li>
+  <li>子类<strong>不可以</strong>将父类属性重写为<strong>存储属性</strong></li>
+  <li>只能重写<code class="language-plaintext highlighter-rouge">var</code>属性，不能重写<code class="language-plaintext highlighter-rouge">let</code>属性</li>
+  <li>重写时，属性名、类型要一致</li>
+  <li>子类重写后的属性权限 不能小于 父类属性的权限
+    <ul>
+      <li>如果父类属性是只读的，那么子类重写后的属性可以是只读的、也可以是可读写的</li>
+      <li>如果父类属性是可读写的，那么子类重写后的属性也必须是可读写的</li>
+    </ul>
+  </li>
+</ul>
+
+<hr />
+
+<h3 id="重写实例属性">重写实例属性</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Circle {
+    var radius: Int = 0
+    var diameter: Int {
+        set {
+            print("Circle setDiameter")
+            radius = newValue / 2
+        }
+        get {
+            print("Circle getDiameter")
+            return radius * 2
+        }
+    }
+}
+
+
+var circle: Circle
+circle = Circle()
+circle.radius = 6
+// Circle getDiameter
+// 12
+print(circle.diameter)
+// Circle setDiameter
+circle.diameter = 20
+// 10
+print(circle.radius)
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class SubCircle : Circle {
+    override var radius: Int {
+        set {
+            print("SubCircle setRadius")
+            super.radius = newValue &gt; 0 ? newValue : 0
+        }
+        get {
+            print("SubCircle getRadius")
+            return super.radius
+        }
+    }
+    override var diameter: Int {
+        set {
+            print("SubCircle setDiameter")
+            super.diameter = newValue &gt; 0 ? newValue : 0
+        }
+        get {
+            print("SubCircle getDiameter")
+            return super.diameter
+        }
+    }
+}
+
+circle = SubCircle()
+
+// SubCircle setRadius
+circle.radius = 6
+
+// SubCircle getDiameter
+// Circle getDiameter
+// SubCircle getRadius
+// 12
+print(circle.diameter)
+
+// SubCircle setDiameter
+// Circle setDiameter
+// SubCircle setRadius
+circle.diameter = 20
+
+// SubCircle getRadius
+// 10
+print(circle.radius)
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="重写类型属性">重写类型属性</h3>
+
+<ul>
+  <li>被<code class="language-plaintext highlighter-rouge">class</code>修饰的<strong>计算类型属性，可以</strong>被子类重写</li>
+  <li>被<code class="language-plaintext highlighter-rouge">static</code>修饰的类<strong>型属性(存储、计算)，不可以</strong>被子类重写</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Circle {
+    static var radius: Int = 0
+    class var diameter: Int {
+        set {
+            print("Circle setDiameter")
+            radius = newValue / 2
+        }
+        get {
+            print("Circle getDiameter")
+            return radius * 2
+        }
+    }
+}
+
+class SubCircle : Circle {
+    override static var diameter: Int {
+        set {
+            print("SubCircle setDiameter")
+            super.diameter = newValue &gt; 0 ? newValue : 0
+        }
+        get {
+            print("SubCircle getDiameter")
+            return super.diameter
+        }
+    }
+}
+
+Circle.radius = 6
+// Circle getDiameter
+// 12
+print(Circle.diameter)
+// Circle setDiameter
+Circle.diameter = 20
+// 10
+print(Circle.radius)
+
+SubCircle.radius = 6
+// SubCircle getDiameter
+// Circle getDiameter
+// 12
+print(SubCircle.diameter)
+// SubCircle setDiameter
+// Circle setDiameter
+SubCircle.diameter = 20
+// 10
+print(SubCircle.radius)
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="属性观察器">属性观察器</h3>
+
+<ul>
+  <li>可以在子类中为父类属性(除了只读计算属性、let属性)增加属性观察器</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Circle {
+    var radius: Int = 1
+}
+class SubCircle : Circle {
+    override var radius: Int {
+        willSet {
+            print("SubCircle willSetRadius", newValue)
+        }
+        didSet {
+            print("SubCircle didSetRadius", oldValue, radius)
+        }
+    }
+}
+var circle = SubCircle()
+// SubCircle willSetRadius 10
+// SubCircle didSetRadius 1 10
+circle.radius = 10
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Circle {
+    var radius: Int = 1 {
+        willSet {
+            print("Circle willSetRadius", newValue)
+        }
+        didSet {
+            print("Circle didSetRadius", oldValue, radius) }
+    }
+}
+
+class SubCircle : Circle {
+    override var radius: Int {
+        willSet {
+            print("SubCircle willSetRadius", newValue)
+        }
+        didSet {
+            print("SubCircle didSetRadius", oldValue, radius)
+        }
+    }
+}
+var circle = SubCircle()
+// SubCircle willSetRadius 10
+// Circle willSetRadius 10
+// Circle didSetRadius 1 10
+// SubCircle didSetRadius 1 10
+circle.radius = 10
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Circle {
+    var radius: Int {
+        set {
+            print("Circle setRadius", newValue)
+        }
+        get {
+            print("Circle getRadius")
+            return 20
+        }
+    }
+}
+
+class SubCircle : Circle {
+    override var radius: Int {
+        willSet {
+            print("SubCircle willSetRadius", newValue)
+        }
+        didSet {
+            print("SubCircle didSetRadius", oldValue, radius)
+        }
+    }
+}
+
+var circle = SubCircle()
+// Circle getRadius
+// SubCircle willSetRadius 10
+// Circle setRadius 10
+// Circle getRadius
+// SubCircle didSetRadius 20 20
+circle.radius = 10
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Circle {
+    class var radius: Int {
+        set {
+            print("Circle setRadius", newValue)
+        }
+        get {
+            print("Circle getRadius")
+            return 20
+        }
+    }
+}
+
+class SubCircle : Circle {
+    override static var radius: Int {
+        willSet {
+            print("SubCircle willSetRadius", newValue)
+        }
+        didSet {
+            print("SubCircle didSetRadius", oldValue, radius)
+        }
+    }
+}
+
+// Circle getRadius
+// SubCircle willSetRadius 10
+// Circle setRadius 10
+// Circle getRadius
+// SubCircle didSetRadius 20 20
+SubCircle.radius = 10
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="final">final</h3>
+
+<ul>
+  <li>被<code class="language-plaintext highlighter-rouge">final</code>修饰的方法、下标、属性，禁止被重写</li>
+  <li>被<code class="language-plaintext highlighter-rouge">final</code>修饰的类，禁止被继承</li>
+</ul>
+:ET

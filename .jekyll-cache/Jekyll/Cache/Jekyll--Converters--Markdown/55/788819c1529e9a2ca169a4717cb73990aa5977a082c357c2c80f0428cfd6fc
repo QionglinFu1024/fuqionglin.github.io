@@ -1,0 +1,137 @@
+I"�<pre><code class="language-objectivec">Run Script下
+/Users/qionglinfu/QLshell/XcodeApp.sh
+
+//Common+B报错
+.../XcodeApp.sh: Permission denied
+//权限问题
+$ chmod +x XcodeApp.sh
+</code></pre>
+
+<h3 id="注入">注入</h3>
+<p>动态注入：程序运行过程中，通过底层函数注入
+静态注入：对可执行文件注入
+都是改变了二进制</p>
+
+<h3 id="framework注入">FrameWork注入</h3>
+<ul>
+  <li>新建target
+    <ul>
+      <li>点击target下的<strong>+</strong>，选择iOS/Framework&amp;Library/Cocoa Touch Framework</li>
+    </ul>
+  </li>
+  <li>Framework下新建类
+    <ul>
+      <li>.m文件重写load方法</li>
+    </ul>
+  </li>
+  <li>添加依赖
+    <ul>
+      <li>选中Build Phases下的<strong>+</strong>，</li>
+      <li>选择New Copy Files Phsse</li>
+      <li>打开Copy Files</li>
+      <li>Destination选择Framework,把刚刚新建的framework添加进去</li>
+      <li>Xcode会打包到APP包里面，frameworks文件夹下，代码进去了，执行的时候根本没有调用我们的代码。只要在项目里面引入了第三方的库，那么我们可执行文件生成的MachO文件的LoadCommond段就会有一个标记，让dyld程序知道这个MachO文件依赖哪些库。</li>
+    </ul>
+  </li>
+  <li>yololib可以将我们的动态库的路径写入machO里面
+    <ul>
+      <li>把文件放在/usr/local/bin下面</li>
+      <li>帮助修改MachO文件的二进制</li>
+    </ul>
+  </li>
+</ul>
+
+<pre><code class="language-objectivec">//yololib MachO文件 相对于MachO文件动态库位置
+$ yololib WeChat Frameworks/QLHookFrameWork.framework/QLHookFrameWork
+2018-09-03 16:10:53.135 yololib[93889:5356683] dylib path @executable_path/Frameworks/QLHookFrameWork.framework/QLHookFrameWork
+2018-09-03 16:10:53.136 yololib[93889:5356683] dylib path @executable_path/Frameworks/QLHookFrameWork.framework/QLHookFrameWork
+Reading binary: WeChat
+
+2018-09-03 16:10:53.143 yololib[93889:5356683] FAT binary!
+2018-09-03 16:10:53.143 yololib[93889:5356683] Injecting to arch 9
+2018-09-03 16:10:53.144 yololib[93889:5356683] Patching mach_header..
+2018-09-03 16:10:53.144 yololib[93889:5356683] Attaching dylib..
+
+2018-09-03 16:10:53.145 yololib[93889:5356683] Injecting to arch 0
+2018-09-03 16:10:53.145 yololib[93889:5356683] 64bit arch wow
+2018-09-03 16:10:53.151 yololib[93889:5356683] dylib size wow 96
+2018-09-03 16:10:53.151 yololib[93889:5356683] mach.ncmds 85
+2018-09-03 16:10:53.151 yololib[93889:5356683] mach.ncmds 86
+2018-09-03 16:10:53.151 yololib[93889:5356683] Patching mach_header..
+2018-09-03 16:10:53.151 yololib[93889:5356683] Attaching dylib..
+
+2018-09-03 16:10:53.152 yololib[93889:5356683] size 93
+2018-09-03 16:10:53.152 yololib[93889:5356683] complete!
+</code></pre>
+
+<ul>
+  <li>新生成的MachO文件替换Products下App里面的MachO文件
+    <ul>
+      <li>直接Com+b无效。MachO被替换！！</li>
+      <li>替换项目下的APP文件夹内的MachO文件</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="dyld注入">dyld注入</h3>
+<ul>
+  <li>新建target
+    <ul>
+      <li>点击target下的<strong>+</strong>，选择macOS/Framework&amp;Library/Library</li>
+    </ul>
+  </li>
+  <li>添加依赖
+    <ul>
+      <li>选中Build Phases下的<strong>+</strong>，</li>
+      <li>选择New Copy Files Phsse</li>
+      <li>打开Copy Files</li>
+      <li>Destination选择Framework,把刚刚新建的dylib添加进去</li>
+      <li>com+b报错</li>
+    </ul>
+  </li>
+</ul>
+<pre><code class="language-objectivec">error: /Users/..../Products/Debug-iphoneos/libHook.dylib: No such file or directory
+它在Debug-iphoneos下找的动态库。而动态库生成的位置在Debug
+//解决1
+copy过去
+//解决2
+改变路径.Build Setting/搜索Per-/
+产品编译路径Per-configuration Build Products Path
+动态库编译路径Per-configuration intermediate Build Products Path
+让两者相同即可
+</code></pre>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>* 环境变量在不同的target下不一样，直接改成
+&lt;pre&gt;&lt;code class="language-objectivec"&gt;$(BUILD_DIR)/Debug-iphoneos &lt;/code&gt;&lt;/pre&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>简单姿势
+    <ul>
+      <li>新建dylib/Build Setting/Architectures/Base SDK直接更改成iOS</li>
+      <li>搜索sign/Signning/Code Signing Identity更改成iOS Developer</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="methodswizzle">MethodSwizzle</h3>
+
+<ul>
+  <li>Class：里面有一张表
+    <ul>
+      <li>IMP：方法实现implementation</li>
+      <li>SEL：字符串Char*</li>
+    </ul>
+  </li>
+  <li>调用方法时，给对象发消息。找到类。查找表,通过SEL找到IMP，IMP是函数指针，地址值。汇编里面函数第一行汇编地址</li>
+  <li>Exchange：交换IMP</li>
+</ul>
+
+<h3 id="小结">小结</h3>
+<blockquote>
+  <p>利用动态库注入 FrameWork、Dylib
+注入进APP(工程和动态库有关联关系)
+修改MachO文件的LoadCommands
+在注入的动态库中，写上自想要的代码</p>
+</blockquote>
+
+:ET

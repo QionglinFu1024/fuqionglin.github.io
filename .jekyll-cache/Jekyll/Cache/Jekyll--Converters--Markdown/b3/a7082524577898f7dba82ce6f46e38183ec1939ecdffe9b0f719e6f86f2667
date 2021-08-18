@@ -1,0 +1,362 @@
+I"�(<h3 id="可选项optional">可选项(Optional)</h3>
+
+<ul>
+  <li>可选项，一般也叫可选类型，它允许将值设置为nil</li>
+  <li>在类型名称后面加个问号? 来定义一个可选项</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var name: String? = "Jack"
+name = nil
+
+var age: Int? // 默认就是nil
+age = 10
+age = nil
+
+var array = [1, 15, 40, 29]
+func get(_ index: Int) -&gt; Int? {
+    if index &lt; 0 || index &gt;= array.count {
+        return nil
+    }
+    return array[index]
+}
+print(get(1)) // Optional(15)
+print(get(-1)) // nil
+print(get(4)) // nil
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="强制解包forced-unwrapping">强制解包(Forced Unwrapping)</h3>
+
+<ul>
+  <li>可选项是对其他类型的一层包装，可以将它理解为一个盒子
+    <ul>
+      <li>如果为nil，那么它是个空盒子</li>
+      <li>如果不为nil，那么盒子里装的是:被包装类型的数据</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var age: Int? // 默认就是nil
+age = 10
+age = nil
+</code></pre></div></div>
+
+<ul>
+  <li>如果要从可选项中取出被包装的数据(将盒子里装的东西取出来)，需要使用感叹号! 进行强制解包</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var age: Int? = 10
+let ageInt: Int = age!
+ageInt += 10
+</code></pre></div></div>
+
+<ul>
+  <li>如果对值为nil的可选项(空盒子)进行强制解包，将会产生运行时错误</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var age: Int?
+age! //Fatal error: Unexpectedly found nil while unwrapping an Optional value
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="判断可选项是否包含值">判断可选项是否包含值</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>let number = Int("123")
+if number != nil {
+    print("字符串转换整数成功:\(number!)")
+} else {
+    print("字符串转换整数失败")
+}
+// 字符串转换整数成功:123
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="可选项绑定optional-binding">可选项绑定(Optional Binding)</h3>
+
+<ul>
+  <li>可以使用<strong>可选项绑定</strong>来判断可选项是否包含值
+    <ul>
+      <li>如果包含就自动解包，把值赋给一个临时的常量(<strong>let</strong>)或者变量(<strong>var</strong>)，并返回<strong>true</strong>，否则返回<strong>false</strong></li>
+    </ul>
+  </li>
+</ul>
+
+<pre><code class="language-objective-c">if let number = Int("123") {
+    print("字符串转换整数成功:\(number)")
+    // number是强制解包之后的Int值
+    // number作用域仅限于这个大括号
+} else {
+    print("字符串转换整数失败")
+}
+// 字符串转换整数成功:123
+
+enum Season : Int {
+    case spring = 1, summer, autumn, winter
+}
+if let season = Season(rawValue: 6) {
+    switch season { case .spring:
+        print("the season is spring")
+    default:
+        print("the season is other")
+    }
+} else {
+    print("no such season")
+}
+// no such season
+</code></pre>
+
+<hr />
+
+<h3 id="等价写法">等价写法</h3>
+
+<pre><code class="language-objective-c">if let first = Int("4") {
+    if let second = Int("42") {
+        if first &lt; second &amp;&amp; second &lt; 100 {
+            print("\(first) &lt; \(second) &lt; 100")
+        }
+    }
+}
+// 4 &lt; 42 &lt; 100
+
+if let first = Int("4"),
+    let second = Int("42"),
+    first &lt; second &amp;&amp; second &lt; 100 {
+    print("\(second) &lt; \(second) &lt; 100")
+}
+// 4 &lt; 42 &lt; 100
+</code></pre>
+
+<hr />
+
+<h3 id="while循环中使用可选项绑定">while循环中使用可选项绑定</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// 遍历数组，将遇到的正数都加起来，如果遇到负数或者非数字，停止遍历
+var strs = ["10", "20", "abc", "-20", "30"]
+
+var index = 0
+var sum = 0
+while let num = Int(strs[index]), num &gt; 0 {
+    sum += num
+    index += 1
+}
+print(sum)
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="空合并运算符-nil-coalescing-operator">空合并运算符 ??(Nil-Coalescing Operator)</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public func ?? &lt;T&gt;(optional: T?, defaultValue: @autoclosure () throws -&gt; T?) rethrows -&gt; T?
+public func ?? &lt;T&gt;(optional: T?, defaultValue: @autoclosure () throws -&gt; T) rethrows -&gt; T
+</code></pre></div></div>
+
+<ul>
+  <li>na ?? bp</li>
+  <li>a 是可选项</li>
+  <li>b 是可选项 或者 不是可选项</li>
+  <li>b 跟 a 的存储类型必须相同</li>
+  <li>如果 a 不为nil，就返回 a</li>
+  <li>如果 a 为nil，就返回 b</li>
+  <li>如果 b 不是可选项，返回 a 时会自动解包</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>let a: Int? = 1
+let b: Int? = 2
+let c = a ?? b // c是Int? , Optional(1)
+
+let a: Int? = nil
+let b: Int? = 2
+let c = a ?? b // c是Int? , Optional(2)
+
+let a: Int? = nil
+let b: Int? = nil
+let c = a ?? b // c是Int? , nil
+
+let a: Int? = 1
+let b: Int = 2
+let c = a ?? b // c是Int , 1
+let a: Int? = nil
+let b: Int = 2
+let c = a ?? b // c是Int , 2
+
+let a: Int? = nil
+let b: Int = 2
+// 如果不使用??运算符 let c: Int
+if let tmp = a {
+    c = tmp
+} else {
+    c=b
+}
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="多个--一起使用">多个 ?? 一起使用</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>let a: Int? = 1
+let b: Int? = 2
+let c = a ?? b ?? 3 // c是Int , 1
+
+let a: Int? = nil
+let b: Int? = 2
+let c = a ?? b ?? 3 // c是Int , 2
+
+let a: Int? = nil
+let b: Int? = nil
+let c = a ?? b ?? 3 // c是Int , 3
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="跟if-let配合使用">??跟if let配合使用</h3>
+
+<pre><code class="language-objective-c">let a: Int? = nil
+let b: Int? = 2
+if let c = a ?? b {
+    print(c)
+}
+// 类似于if a != nil || b != nil
+
+if let c = a, let d = b {
+    print(c)
+    print(d)
+}
+// 类似于if a != nil &amp;&amp; b != nil
+</code></pre>
+
+<hr />
+
+<h3 id="if语句实现登陆">if语句实现登陆</h3>
+
+<pre><code class="language-objective-c">func login(_ info: [String : String]) {
+    let username: String
+    if let tmp = info["username"] {
+        username = tmp
+    } else {
+        print("请输入用户名")
+        return
+    }
+    let password: String
+    if let tmp = info["password"] {
+        password = tmp
+    } else {
+        print("请输入密码")
+        return
+    }
+    // if username ....
+    // if password ....
+    print("用户名:\(username)", "密码:\(password)", "登陆ing")
+}
+
+login(["username" : "jack", "password" : "123456"]) // 用户名:jack 密码:123456 登陆ing
+login(["password" : "123456"]) // 请输入密码
+login(["username" : "jack"]) // 请输入用户名
+</code></pre>
+
+<hr />
+
+<h3 id="guard语句">guard语句</h3>
+
+<ul>
+  <li>当guard语句的条件为false时，就会执行大括号里面的代码</li>
+  <li>当guard语句的条件为true时，就会跳过guard语句</li>
+  <li>guard语句特别适合用来“提前退出”</li>
+  <li>当使用guard语句进行可选项绑定时，绑定的常量(let)、变量(var)也能在外层作用域中使用</li>
+</ul>
+
+<pre><code class="language-objective-c">guard 条件 else {
+    // do something....
+    退出当前作用域
+    // return、break、continue、throw error
+}
+
+
+func login(_ info: [String : String]) {
+    guard let username = info["username"] else {
+        print("请输入用户名")
+        return
+    }
+    guard let password = info["password"] else {
+        print("请输入密码")
+        return
+    }
+    // if username ....
+    // if password ....
+    print("用户名:\(username)", "密码:\(password)", "登陆ing")
+}
+</code></pre>
+
+<hr />
+
+<h3 id="隐式解包implicitly-unwrapped-optional">隐式解包(Implicitly Unwrapped Optional)</h3>
+
+<ul>
+  <li>在某些情况下，可选项一旦被设定值之后，就会一直拥有值</li>
+  <li>在这种情况下，可以去掉检查，也不必每次访问的时候都进行解包，因为它能确定每次访问的时候都有值</li>
+  <li>可以在类型后面加个感叹号 ! 定义一个隐式解包的可选项</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>let num1: Int! = 10
+let num2: Int = num1
+if num1 != nil {
+    print(num1 + 6) // 16
+}
+if let num3 = num1 {
+    print(num3)
+}
+
+let num1: Int! = nil
+// Fatal error: Unexpectedly found nil while implicitly unwrapping an Optional value
+let num2: Int = num1
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="字符串插值">字符串插值</h3>
+
+<ul>
+  <li>可选项在字符串插值或者直接打印时，编译器会发出警告</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var age: Int? = 10
+print("My age is \(age)")
+</code></pre></div></div>
+
+<ul>
+  <li>至少有3种方法消除警告</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>print("My age is \(age!)")
+// My age is 10
+print("My age is \(String(describing: age))")
+// My age is Optional(10)
+print("My age is \(age ?? 0)")
+// My age is 10
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="多重可选项">多重可选项</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var num1: Int? = 10   //包装了一个可选类型，盒子里面装了10
+var num2: Int?? = num1  //包装了一个可选类型的可选类型
+var num3: Int?? = 10  
+print(num2 == num3) // true
+</code></pre></div></div>
+
+<ul>
+  <li>可以使用lldb指令 <strong>frame variable –R</strong> 或者 <strong>fr v –R</strong> 查看区别</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var num1: Int? = nil
+var num2: Int?? = num1
+var num3: Int?? = nil
+print(num2 == num3)   // false
+(num2 ?? 1) ?? 2      // 2   num2不是空盒子，1是非可选项 num2自动解包，于是 (num1 ?? 2)
+(num3 ?? 1) ?? 2      // 1
+</code></pre></div></div>
+
+:ET

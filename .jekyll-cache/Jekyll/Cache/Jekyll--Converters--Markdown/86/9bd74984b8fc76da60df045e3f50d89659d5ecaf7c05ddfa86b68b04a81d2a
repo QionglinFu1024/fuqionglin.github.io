@@ -1,0 +1,178 @@
+I"A<h3 id="logos"><a href="http://iphonedevwiki.net/index.php/Logos">Logos</a></h3>
+
+<ul>
+  <li>
+    <p><strong>.xm</strong>文件写的会编译成<strong>.mm</strong>文件是源文件</p>
+  </li>
+  <li>group 只要分了组，就要写构造函数、初始化，在构造函数中指定加载哪一组</li>
+  <li>初始化哪一组哪一组就生效。如同时初始化2和1，2会被覆盖</li>
+</ul>
+
+<pre><code class="language-objectivec">%group group1//group标记
+%hook ViewController
+
+- (void)loginBtnClick:(id)arg1
+{
+    %log
+    [[[UIAlertView alloc] initWithTitle:@"group1" message:@"msg" delegate:nil cancelButtonTitle:@"cancel" otherButtonTitles:@"ok", nil] show];
+}
+%end
+%end
+
+%group group2
+
+%hook ViewController
+- (void)loginBtnClick:(id)arg1
+{
+    %log
+    [[[UIAlertView alloc] initWithTitle:@"group2" message:@"msg" delegate:nil cancelButtonTitle:@"cancel" otherButtonTitles:@"ok", nil] show];
+}
+%end
+%end
+
+//构造函数 constructor
+//默认的 %ctor{  %init(_ungrouped)}
+//指定加载哪一组
+%ctor{
+    NSString * version = [UIDevice currentDevice].systemVersion;
+    if(version.doubleValue &gt;= 11.1){
+        %init(group2)
+    }else{
+        %init(group1)
+    }
+}
+
+</code></pre>
+
+<ul>
+  <li>常用语法
+    <ul>
+      <li>%ctor 构造函数</li>
+      <li>%dtor 析构函数</li>
+      <li>%init 初始化</li>
+      <li>%log 输出，消息发出的时候，内部的参数</li>
+      <li>%orig 保留原来的方法实现</li>
+      <li>%new 给某个类动态添加方法</li>
+      <li>%c 拿到一个类</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="flex库">FLEX库</h3>
+
+<ul>
+  <li>非越狱环境，cocopods导入工程即可安装</li>
+  <li>界面调试工具</li>
+</ul>
+
+<h3 id="monkeydev">MonkeyDev</h3>
+
+<ul>
+  <li>选择指定的Xcode安装:</li>
+</ul>
+
+<pre><code class="language-objectivec">$ sudo xcode-select -s /Applications/Xcode-beta.app
+</code></pre>
+
+<ul>
+  <li>如果不指定的话，默认就是:</li>
+</ul>
+
+<pre><code class="language-objectivec">$ xcode-select -p
+</code></pre>
+
+<ul>
+  <li>然后安装:</li>
+</ul>
+
+<pre><code class="language-objectivec">$ git clone https://github.com/AloneMonkey/MonkeyDev.git
+$ cd MonkeyDev/bin
+$ sudo ./md-install
+</code></pre>
+
+<ul>
+  <li>如果不用，运行下面的命令卸载:</li>
+</ul>
+
+<pre><code class="language-objectivec">$ sudo ./md-uninstall
+</code></pre>
+
+<blockquote>
+  <p>当然使用前，你要安装最新版本的<strong>theos</strong></p>
+</blockquote>
+
+<ul>
+  <li>Theos是放在github上的，使用git命令来clone比较方便。虽然可以放在任何目录下，但是官方建议大家放在 /opt/下 。打开Mac的终端，输入命令行：</li>
+</ul>
+
+<pre><code class="language-objectivec">//指定Theos的安装路径
+$ export THEOS=/opt/theos
+//下载theos到指定的目录
+$ git clone --recursive https://github.com/theos/theos.git $THEOS 
+</code></pre>
+
+<blockquote>
+  <p>配置Idid</p>
+</blockquote>
+
+<ul>
+  <li>Idid用来专门签名iOS可执行文件的工具，用以在越狱iOS中取代Xcode自带的codesign。如果不安装，那么产生的deb文件就安装不到手机上。安装ldid，推荐的方式是采用brew来安装，在终端输入命令行：</li>
+</ul>
+
+<pre><code class="language-objectivec">$ brew install ldid
+</code></pre>
+
+<blockquote>
+  <p>配置dpkg-deb</p>
+</blockquote>
+
+<ul>
+  <li>deb是越狱开发包的标准格式，dpkg-deb是个用于操作deb文件的工具,有了这个工具，Theos才能正确的把工程打包成deb文件。同样的，我们采用brew来安装，在终端输入命令行：</li>
+</ul>
+
+<pre><code class="language-objectivec">$ brew install dpkg
+</code></pre>
+
+<pre><code class="language-objectivec">//方法交换中的self
+Class1:method1
+Class2:method2
+Method_ExchangeIMP(method1,method2);
+method2{
+    self;//Class1?Class2?
+    //self是根据方法的调用来的！谁调用的我，self就是谁～~~Class1
+}
+method1{}
+[Objc1 method1];
+</code></pre>
+
+<blockquote>
+  <p>Logos
+CydiaSubstruct
+OC的Hook利用的是Runtime
+C函数的Hook利用的是fishHook
+fishHook原理：DYLD动态链接器</p>
+
+  <p>APP加载到内存时，DYLD会去链接MachO里面依赖哪些系统的库，MachO文件里面会写清楚。调用的时候符号表也有，分为懒加载和非懒加载，非懒加载的会立刻马上帮你去链接，懒加载的会在执行代码的时候帮你动态的链接。链接过程就是将系统库函数的准确地址赋值给你MachO懒加载符号表里面，也就是指针里面。接下来调用函数的时候就可以找到系统的库函数了，而fishHook就是在重新绑定那个函数</p>
+
+  <p>通过fishHook去交换的时候有两种方法
+1.直接rebind函数名
+2.指定image (原理一样)</p>
+
+  <p>自己写的函数，在编译阶段已经分配好了，编译&amp;链接。在函数内部没用函数名称的只有地址…编译成功后源码里面没有符号，所有条状过程都是地址，通过地址Hook不到。</p>
+</blockquote>
+
+<pre><code class="language-objectivec">//快速打印log
+logify.pl ~/user/WeChatHeaders/BaseMsgContentViewController.h &gt; ./hookHeader.xm
+</code></pre>
+
+<pre><code class="language-objectivec">//恢复符号表
+$ make restore-symbol
+//可执行文件对MachO文件进行恢复
+//只能是单一架构，不能是通用架构！！！
+//拆分
+$ lipo WeChat -thin arm64 -output WeChat_arm64
+//恢复
+$ ./restore-symbol WeChat_arm64 -o WeiChat
+</code></pre>
+
+:ET
