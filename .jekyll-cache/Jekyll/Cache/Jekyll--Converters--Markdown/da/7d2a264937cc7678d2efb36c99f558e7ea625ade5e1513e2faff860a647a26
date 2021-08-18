@@ -1,20 +1,9 @@
----
-layout: post
-title: '防护进阶'
-subtitle: 'sysctl、反HOOK'
-date: 2018-04-10
-categories: 技术
-cover: 
-tags: 逆向tz
----
+I"�<h2 id="1-反调试sysctl">1. 反调试sysctl</h2>
 
-## 1. 反调试sysctl
+<p>系统函数 监测应用是否被调试</p>
 
-系统函数 监测应用是否被调试
-
-```objective-c
-#import "ViewController.h"
-#import &lt;sys/sysctl.h>
+<pre><code class="language-objective-c">#import "ViewController.h"
+#import &amp;lt;sys/sysctl.h&gt;
 
 @interface ViewController ()
 @end
@@ -47,30 +36,27 @@ BOOL isDebugger(){
     
     struct kinfo_proc info;//接受进程查询结果信息的结构体
     size_t info_size = sizeof(info);//结构体的大小
-    int error = sysctl(name, sizeof(name)/sizeof(*name), &info, &info_size, 0, 0);
+    int error = sysctl(name, sizeof(name)/sizeof(*name), &amp;info, &amp;info_size, 0, 0);
     assert(error == 0);//0就是没有错误,其他就是错误码
     //p_flag 有很多二进制信息
     //例如:1011 1000 1010 1010 1101 0101 1101 0101
-    //&
+    //&amp;
     //0000 0000 0000 1000 0000 0000 0000 0000
     // 第32位 == 0 ? 没有  有!!
-    return ((info.kp_proc.p_flag & P_TRACED) != 0);
+    return ((info.kp_proc.p_flag &amp; P_TRACED) != 0);
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     debugCheck();
 }
-```
+</code></pre>
 
+<h2 id="2破解sysctl---fishhook">2.破解sysctl - fishHook</h2>
 
-
-## 2.破解sysctl - fishHook
-
-```objective-c
-#import "injectCode.h"
+<pre><code class="language-objective-c">#import "injectCode.h"
 #import "fishhook.h"
-#import <sys/sysctl.h>
+#import &lt;sys/sysctl.h&gt;
 
 @implementation injectCode
 //原始函数的地址
@@ -79,20 +65,20 @@ int (*sysctl_p)(int *, u_int, void *, size_t *, void *, size_t);
 int mySysctl(int *name, u_int namelen, void *info, size_t *infosize, void *newinfo, size_t newinfosize){
     if (namelen == 4
         //检查内核
-        && name[0] == CTL_KERN
+        &amp;&amp; name[0] == CTL_KERN
         //检查内核的进程
-        && name[1] == KERN_PROC
+        &amp;&amp; name[1] == KERN_PROC
          //传递的参数是PID
-        && name[2] == KERN_PROC_PID
-        && info
-        && (int)*infosize == sizeof(struct kinfo_proc))
+        &amp;&amp; name[2] == KERN_PROC_PID
+        &amp;&amp; info
+        &amp;&amp; (int)*infosize == sizeof(struct kinfo_proc))
     {
         int err = sysctl_p(name, namelen, info, infosize, newinfo, newinfosize);
         //拿出info做判断
         struct kinfo_proc * myInfo = (struct kinfo_proc *)info;
-        if((myInfo->kp_proc.p_flag & P_TRACED) != 0){
+        if((myInfo-&gt;kp_proc.p_flag &amp; P_TRACED) != 0){
             //使用异或取反
-            myInfo->kp_proc.p_flag ^= P_TRACED;
+            myInfo-&gt;kp_proc.p_flag ^= P_TRACED;
         }
         return err;
     }
@@ -106,20 +92,19 @@ int mySysctl(int *name, u_int namelen, void *info, size_t *infosize, void *newin
 }
 
 @end
-```
+</code></pre>
 
+<h2 id="3-ptracesysctl提前执行">3. ptrace&amp;sysctl提前执行</h2>
 
+<ul>
+  <li>新建的动态库放到最前面执行</li>
+  <li>在load里面判断</li>
+</ul>
 
-## 3. ptrace&sysctl提前执行
-
-* 新建的动态库放到最前面执行
-* 在load里面判断
-
-```objective-c
-#import "antiDebugCode.h"
+<pre><code class="language-objective-c">#import "antiDebugCode.h"
 #import "fishhook.h"
 #import "MyPtraceHeader.h"
-#import <sys/sysctl.h>
+#import &lt;sys/sysctl.h&gt;
 
 static dispatch_source_t timer;
 @implementation antiDebugCode
@@ -148,14 +133,14 @@ BOOL isDebugger(){
     
     struct kinfo_proc info;//接受进程查询结果信息的结构体
     size_t info_size = sizeof(info);//结构体的大小
-    int error = sysctl(name, sizeof(name)/sizeof(*name), &info, &info_size, 0, 0);
+    int error = sysctl(name, sizeof(name)/sizeof(*name), &amp;info, &amp;info_size, 0, 0);
     assert(error == 0);//0就是没有错误,其他就是错误码
     
     //1011 1000 1010 1010 1101 0101 1101 0101
-    //&
+    //&amp;
     //0000 0000 0000 1000 0000 0000 0000 0000
     // == 0 ? 没有  有!!
-    return ((info.kp_proc.p_flag & P_TRACED) != 0);
+    return ((info.kp_proc.p_flag &amp; P_TRACED) != 0);
 }
 
 void debugerCheck(){
@@ -173,19 +158,23 @@ void debugerCheck(){
 }
 
 @end
-```
+</code></pre>
 
-## 4. 攻防博弈！找到你就赢
+<h2 id="4-攻防博弈找到你就赢">4. 攻防博弈！找到你就赢</h2>
 
-* loadCommand段前移...
-* 直接修改二进制，改变代码
-* 直接闪退，两种
-    * exit
-    * ptrace
-* 下一个符号断点
+<ul>
+  <li>loadCommand段前移…</li>
+  <li>直接修改二进制，改变代码</li>
+  <li>直接闪退，两种
+    <ul>
+      <li>exit</li>
+      <li>ptrace</li>
+    </ul>
+  </li>
+  <li>下一个符号断点</li>
+</ul>
 
-```objective-c
-//只要调用就可以断住
+<pre><code class="language-objective-c">//只要调用就可以断住
 ptrace
 //bt查看函数真实。相对于动态库偏移地址。指令地址，pc寄存器永远指向下一条
 //image list 找到动态库地址
@@ -194,16 +183,34 @@ ptrace
 //寄存器前三句(保护寄存器)直接跳到后三句(恢复寄存器)。不执行中间option+A修改
 //导出file/Produce New Executable
 //替换Macho
-```
+</code></pre>
 
-## 5. 破解悬疑已久的反HOOK
+<h2 id="5-破解悬疑已久的反hook">5. 破解悬疑已久的反HOOK</h2>
 
-* hopper查找 method_setImplementation
-* 直接修改地址～～～
+<ul>
+  <li>hopper查找 method_setImplementation</li>
+  <li>直接修改地址～～～</li>
+</ul>
 
-```objective-c
-//拿到的地址
+<pre><code class="language-objective-c">//只要调用就可以断住
+ptrace
+//bt查看函数真实。相对于动态库偏移地址。指令地址，pc寄存器永远指向下一条
+//image list 找到动态库地址
+//偏移地址减去动态库地址，拿到指令地址
+//hopper查看，指令地址的上一条即为调用地址
+//寄存器前三句(保护寄存器)直接跳到后三句(恢复寄存器)。不执行中间option+A修改
+//导出file/Produce New Executable
+//替换Macho
+
+著作权归作者所有。
+商业转载请联系作者获得授权,非商业转载请注明出处。
+原文: https://www.fuqionglin.com/%E6%8A%80%E6%9C%AF/2018/04/10/%E9%98%B2%E6%8A%A4%E8%BF%9B%E9%98%B6.html
+</code></pre>
+
+<pre><code class="language-objectivec">//拿到的地址
 bt 
 //查看汇编
 dis -s 地址 
-```
+</code></pre>
+
+:ET
