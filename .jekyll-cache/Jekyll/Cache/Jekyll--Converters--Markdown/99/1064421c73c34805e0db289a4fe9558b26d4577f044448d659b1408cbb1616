@@ -1,0 +1,41 @@
+I"�<p>#</p>
+
+<p>变量和常量是编程中必不可少的部分，也是很好理解的一部分。</p>
+
+<h1 id="1标识符与关键字">1.标识符与关键字</h1>
+
+<h3 id="11-标识符">1.1 标识符</h3>
+
+<p>在编程语言中标识符就是程序员定义的具有特殊意义的词，比如变量名、常量名、函数名等等。 Go语言中标识符由字母数字和<code class="language-plaintext highlighter-rouge">_</code>(下划线）组成，并且只能以字母和<code class="language-plaintext highlighter-rouge">_</code>开头。 举几个例子：<code class="language-plaintext highlighter-rouge">abc</code>, <code class="language-plaintext highlighter-rouge">_</code>, <code class="language-plaintext highlighter-rouge">_123</code>, <code class="language-plaintext highlighter-rouge">a123</code>。</p>
+
+<h3 id="12-关键字">1.2 关键字</h3>
+
+<p>关键字是指编程语言中预先定义好的具有特殊含义的标识符。 关键字和保留字都不建议用作变量名。</p>
+
+<p>Go语言中有25个关键字：</p>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="k">break</span>        <span class="k">default</span>      <span class="k">func</span>         <span class="k">interface</span>    <span class="k">select</span>
+    <span class="k">case</span>         <span class="k">defer</span>        <span class="k">go</span>           <span class="k">map</span>          <span class="k">struct</span>
+    <span class="k">chan</span>         <span class="k">else</span>         <span class="k">goto</span>         <span class="k">package</span>      <span class="k">switch</span>
+    <span class="k">const</span>        <span class="k">fallthrough</span>  <span class="k">if</span>           <span class="k">range</span>        <span class="k">type</span>
+    <span class="k">continue</span>     <span class="k">for</span>          <span class="k">import</span>       <span class="k">return</span>       <span class="k">var</span>
+</code></pre></div></div>
+
+<p>此外，Go语言中还有37个保留字。</p>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="n">Constants</span><span class="o">:</span>    <span class="no">true</span>  <span class="no">false</span>  <span class="no">iota</span>  <span class="no">nil</span>
+
+        <span class="n">Types</span><span class="o">:</span>    <span class="kt">int</span>  <span class="kt">int8</span>  <span class="kt">int16</span>  <span class="kt">int32</span>  <span class="kt">int64</span>  
+                  <span class="kt">uint</span>  <span class="kt">uint8</span>  <span class="kt">uint16</span>  <span class="kt">uint32</span>  <span class="kt">uint64</span>  <span class="kt">uintptr</span>
+                  <span class="kt">float32</span>  <span class="kt">float64</span>  <span class="kt">complex128</span>  <span class="kt">complex64</span>
+                  <span class="kt">bool</span>  <span class="kt">byte</span>  <span class="kt">rune</span>  <span class="kt">string</span>  <span class="kt">error</span>
+
+    <span class="n">Functions</span><span class="o">:</span>   <span class="nb">make</span>  <span class="nb">len</span>  <span class="nb">cap</span>  <span class="nb">new</span>  <span class="nb">append</span>  <span class="nb">copy</span>  <span class="nb">close</span>  <span class="nb">delete</span>
+                 <span class="nb">complex</span>  <span class="nb">real</span>  <span class="nb">imag</span>
+                 <span class="nb">panic</span>  <span class="nb">recover</span>
+</code></pre></div></div>
+
+<h1 id="2变量">2.变量</h1>
+
+<h3 id="21-变量的来历">2.1 变量的来历</h3>
+:ET
