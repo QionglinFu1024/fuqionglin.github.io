@@ -1,0 +1,157 @@
+I"�/<h1 id="1-mac系统">1. Mac系统</h1>
+
+<h3 id="11-下载--安装">1.1 下载 &amp; 安装</h3>
+
+<p>去官网下载安装包。 地址：<a href="https://golang.google.cn/">https://golang.google.cn/</a></p>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/2021/image-20210818133116235.png" alt="image-20210818133116235" /></p>
+
+<p>双击已下载的 pkg 文件，点击【继续】直到安装成功。 默认安装目录：<code class="language-plaintext highlighter-rouge">/usr/local/go</code></p>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/2021/image-20210818102800467.png" alt="image-20210818102800467" /></p>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/2021/image-20210818113807175.png" alt="image-20210818113807175" style="zoom:150%;" /></p>
+
+<p>至此，Go编译器就快速安装成功了。</p>
+
+<p>编译器安装成功之后，在终端用 <code class="language-plaintext highlighter-rouge">go 相关命令</code> 可以让编译器做一些事情（具体可以往后看）。</p>
+
+<h3 id="12-配置">1.2 配置</h3>
+
+<p>为了开发项目方便和规范，在编译器安装成功之后，需要做如下几项配置：</p>
+
+<ul>
+  <li>
+    <p>配置Go代码目录结构，为了方便管理以后自己开发的Go项目代码，在自己硬盘上最好为Go先做写目录结构的处理。</p>
+
+    <ul>
+      <li>
+        <p>第一步：创建一个文件夹用于存储以后的GO代码。</p>
+
+        <div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">例如：在</span> <span class="o">/</span><span class="no">Users</span><span class="o">/</span><span class="n">bear</span><span class="o">/</span> <span class="err">目录下去新建一个文件夹为</span> <span class="no">GolangProjects</span>
+</code></pre></div>        </div>
+      </li>
+      <li>
+        <p>第二步：进入刚新建的文件夹，在内部再创建 <code class="language-plaintext highlighter-rouge">bin</code>、<code class="language-plaintext highlighter-rouge">pkg</code>、<code class="language-plaintext highlighter-rouge">src</code> 3个文件夹。</p>
+
+        <div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="sr">/Users/</span><span class="n">bear</span><span class="o">/</span><span class="no">GolangProjects</span><span class="o">/</span> 
+  <span class="err">├──</span> <span class="n">bin</span><span class="err">，用于存放编译后的可执行文件。</span> 
+  <span class="err">├──</span> <span class="n">pkg</span><span class="err">，用于存放编译后的包文件。</span> 
+  <span class="err">└──</span> <span class="n">src</span><span class="err">，我们以后写的</span><span class="n">go</span><span class="err">项目代码都写到这里去，在内部为每个项目创建一个文件夹。</span>
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>配置系统环境变量，将go编译器的路径添加到系统环境变量，之后在终端go命令可直接调用go编译器。（安装时默认已执行）</p>
+
+    <div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># 在终端执行命令  export PATH=编译器安装目录/bin:$PATH  </span>
+  <span class="n">export</span> <span class="no">PATH</span><span class="o">=</span><span class="sr">/usr/</span><span class="n">local</span><span class="o">/</span><span class="n">go</span><span class="o">/</span><span class="n">bin</span><span class="p">:</span><span class="vg">$PATH</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>配置Go安装目录，即：Go源码目录，用于调用go相关源码。</p>
+
+    <div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># 在终端执行命令 export GOROOT=编译器安装目录  </span>
+  <span class="n">export</span> <span class="no">GOROOT</span><span class="o">=</span><span class="sr">/usr/</span><span class="n">local</span><span class="o">/</span><span class="n">go</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>配置Go项目代码相关目录，将你以后写的go代码及其编译生成的文件存放的目录。</p>
+
+    <div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># 在终端执行命令 export GOPATH=放置Go代码的相关目录 </span>
+  <span class="n">export</span> <span class="no">GOPATH</span><span class="o">=</span><span class="sr">/Users/</span><span class="n">bear</span><span class="o">/</span><span class="no">GolangProjects</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>配置Go编译文件目录，Go是个编译型语言，当使用go install命令对代码进行编译时，可执行文件会生成到这个目录。</p>
+
+    <div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1"># 在终端执行命令 export GOBIN=放置Go编译文件的目录 </span>
+  <span class="n">export</span> <span class="no">GOBIN</span><span class="o">=</span><span class="sr">/Users/</span><span class="n">bear</span><span class="o">/</span><span class="no">GolangProjects</span><span class="o">/</span><span class="n">bin</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>最后，执行命令让刚才配置的那些 环境变量 立即生效</p>
+
+    <div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="n">source</span> <span class="sr">/etc/</span><span class="n">profile</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<p>使用上述方式只是临时修改环境变量，如果想要永久修改环境变量，可以把环境变量添加到 .bash_profile 文件中。即：<code class="language-plaintext highlighter-rouge">vim ~/.bash_profile</code>打开文件并写入如下内容。</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">export</span> <span class="no">PATH</span><span class="o">=</span><span class="sr">/usr/</span><span class="n">local</span><span class="o">/</span><span class="n">go</span><span class="o">/</span><span class="n">bin</span><span class="p">:</span><span class="vg">$PATH</span>
+<span class="n">export</span> <span class="no">GOROOT</span><span class="o">=</span><span class="sr">/usr/</span><span class="n">local</span><span class="o">/</span><span class="n">go</span>
+<span class="n">export</span> <span class="no">GOPATH</span><span class="o">=</span><span class="sr">/Users/</span><span class="n">bear</span><span class="o">/</span><span class="no">GolangProjects</span>
+<span class="n">export</span> <span class="no">GOBIN</span><span class="o">=</span><span class="sr">/Users/</span><span class="n">bear</span><span class="o">/</span><span class="no">GolangProjects</span><span class="o">/</span><span class="n">bin</span>
+</code></pre></div></div>
+
+<p>这样环境变量就永久有效了。</p>
+
+<h3 id="13-写代码">1.3 写代码</h3>
+
+<p>在 GOPATH 下的 src 目录中创建一个 <code class="language-plaintext highlighter-rouge">文件夹（项目）</code>，进入文件夹并创建一个以<code class="language-plaintext highlighter-rouge">.go</code>为后缀名的文件（如 first.go），并在first.go文件中写入go代码。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/Users/bear/GolangProjects/├── bin├── pkg└── src    └── day01，项目        └── first.go，项目中的文件
+// first.go 文件中的代码内容如下package mainimport "fmt"func main() {    // 调用Println函数在屏幕输出：叫爸爸    fmt.Println("叫爸爸")}
+</code></pre></div></div>
+
+<h3 id="14-运行代码">1.4 运行代码</h3>
+
+<p>编译器安装完成并且代码也写好之后，就可以使用Go编译器去运行代码了。</p>
+
+<p>Go编译器提供了3种方式让我们来运行自己编写的go程序代码。</p>
+
+<ul>
+  <li>
+    <p>方式一：<code class="language-plaintext highlighter-rouge">go run</code> ，compile and run Go program ，其内部会【先编译】代码文件【再运行】（二合一）。
+<img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/2021/image-20210818131852959.png" alt="image-20210818131852959" /></p>
+  </li>
+  <li>
+    <p>方式二：<code class="language-plaintext highlighter-rouge">go build</code>，compile packages and dependencies，其内部就是将go代码进行编译，然后手动执行。
+<img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/2021/image-20210818132122013.png" alt="image-20210818132122013" /></p>
+  </li>
+  <li>
+    <p>方式三：<code class="language-plaintext highlighter-rouge">go install</code>，compile and install packages and dependencies，其内部就是编译go代码，并将可执行文件/包文件分别放到 bin 和 pkg目录。
+<img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/2021/image-20210818132927612.png" alt="image-20210818132927612" /></p>
+  </li>
+</ul>
+
+<p>至此，Mac系统上进行Go编译器的安装就完成了。</p>
+
+<hr />
+
+<h1 id="2goland">2.Goland</h1>
+
+<h3 id="21-快速使用">2.1 快速使用</h3>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/2021/image-20210818133316308.png" alt="image-20210818133316308" /></p>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/2021/image-20210818133544210.png" alt="image-20210818133544210" /></p>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/2021/image-20210818133925395.png" alt="image-20210818133925395" /></p>
+
+<h3 id="22-常见配置">2.2 常见配置</h3>
+
+<h5 id="1参数建议">1.参数建议</h5>
+
+<p>你的Goland在编写代码时，可能会在代码发现一些 <code class="language-plaintext highlighter-rouge">a...:</code> 等标记，这其实是Goland为你提供的参数的注解，如果不想展示，则可以修改Goland的配置实现。</p>
+
+<p><img src="https://fuqionglin-blog.oss-cn-qingdao.aliyuncs.com/2021/image-20210818134129464.png" alt="image-20210818134129464" /></p>
+
+<hr />
+
+<h1 id="3项目结构">3.项目结构</h1>
+
+<p>在进行Go语言开发的时候，我们的代码总是会保存在<code class="language-plaintext highlighter-rouge">$GOPATH/src</code>目录下。在工程经过<code class="language-plaintext highlighter-rouge">go build</code>、<code class="language-plaintext highlighter-rouge">go install</code>或<code class="language-plaintext highlighter-rouge">go get</code>等指令后，会将下载的第三方包源代码文件放在<code class="language-plaintext highlighter-rouge">$GOPATH/src</code>目录下， 产生的二进制可执行文件放在 <code class="language-plaintext highlighter-rouge">$GOPATH/bin</code>目录下，生成的中间缓存文件会被保存在 <code class="language-plaintext highlighter-rouge">$GOPATH/pkg</code> 下。</p>
+
+<p>如果我们使用版本管理工具（Version Control System，VCS。常用如Git）来管理我们的项目代码时，我们只需要添加<code class="language-plaintext highlighter-rouge">$GOPATH/src</code>目录的源代码即可。<code class="language-plaintext highlighter-rouge">bin</code> 和 <code class="language-plaintext highlighter-rouge">pkg</code> 目录的内容无需版本控制。</p>
+
+<h3 id="31-适合个人开发者">3.1 适合个人开发者</h3>
+
+<p>我们知道源代码都是存放在<code class="language-plaintext highlighter-rouge">GOPATH</code>的<code class="language-plaintext highlighter-rouge">src</code>目录下，那我们可以按照下图来组织我们的代码。</p>
+
+<p><img src="/Users/bear/Blog/_posts/2021-08-01-Mac系统搭建Go开发环境.assets/image-20210818173334292.png" alt="image-20210818173334292" /></p>
+
+<p>举个例子：张三和李四都有一个名叫<code class="language-plaintext highlighter-rouge">studygo</code>的项目，那么这两个包的路径就会是：</p>
+:ET
