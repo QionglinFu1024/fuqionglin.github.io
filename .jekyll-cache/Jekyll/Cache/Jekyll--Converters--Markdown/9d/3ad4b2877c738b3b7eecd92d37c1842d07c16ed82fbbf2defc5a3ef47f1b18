@@ -1,0 +1,300 @@
+I"SZ<h2 id="访问控制access-control">访问控制(Access Control)</h2>
+
+<ul>
+  <li>在访问权限控制这块，Swift提供了5个不同的访问级别(以下是从高到低排列， 实体指被访问级别修饰的内容)
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">open</code>:允许在定义实体的模块、其他模块中访问，允许其他模块进行继承、重写(<code class="language-plaintext highlighter-rouge">open</code>只能用在类、类成员上)</li>
+      <li><code class="language-plaintext highlighter-rouge">public</code>:允许在定义实体的模块、其他模块中访问，不允许其他模块进行继承、重写</li>
+      <li><code class="language-plaintext highlighter-rouge">internal</code>:只允许在定义实体的模块中访问，不允许在其他模块中访问</li>
+      <li><code class="language-plaintext highlighter-rouge">fileprivate</code>:只允许在定义实体的源文件中访问</li>
+      <li><code class="language-plaintext highlighter-rouge">private</code>:只允许在定义实体的封闭声明中访问</li>
+    </ul>
+  </li>
+  <li>绝大部分实体默认都是<code class="language-plaintext highlighter-rouge">internal</code> 级别</li>
+</ul>
+
+<hr />
+
+<h2 id="访问级别的使用准则">访问级别的使用准则</h2>
+
+<ul>
+  <li>一个实体不可以被更低访问级别的实体定义，比如
+    <ul>
+      <li>变量\常量类型 ≥ 变量\常量</li>
+      <li>参数类型、返回值类型 ≥ 函数</li>
+      <li>父类 ≥ 子类</li>
+      <li>父协议 ≥ 子协议</li>
+      <li>原类型 ≥ typealias</li>
+      <li>原始值类型、关联值类型 ≥ 枚举类型</li>
+      <li>定义类型A时用到的其他类型 ≥ 类型A</li>
+      <li>……</li>
+    </ul>
+  </li>
+</ul>
+
+<hr />
+
+<h2 id="元组类型">元组类型</h2>
+
+<ul>
+  <li>元组类型的访问级别是所有成员类型最低的那个</li>
+</ul>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">internal</span> <span class="kd">struct</span> <span class="kt">Dog</span> <span class="p">{}</span>
+<span class="kd">fileprivate</span> <span class="kd">class</span> <span class="kt">Person</span> <span class="p">{}</span>
+<span class="c1">// (Dog, Person)的访问级别是fileprivate</span>
+<span class="kd">fileprivate</span> <span class="k">var</span> <span class="nv">data1</span><span class="p">:</span> <span class="p">(</span><span class="kt">Dog</span><span class="p">,</span> <span class="kt">Person</span><span class="p">)</span>
+<span class="kd">private</span> <span class="k">var</span> <span class="nv">data2</span><span class="p">:</span> <span class="p">(</span><span class="kt">Dog</span><span class="p">,</span> <span class="kt">Person</span><span class="p">)</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="泛型类型">泛型类型</h2>
+
+<ul>
+  <li>泛型类型的访问级别是 <strong>类型的访问级别</strong> 以及 <strong>所有泛型类型参数的访问级别</strong> 中最低的那个</li>
+</ul>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">internal</span> <span class="kd">class</span> <span class="kt">Car</span> <span class="p">{}</span>
+<span class="kd">fileprivate</span> <span class="kd">class</span> <span class="kt">Dog</span> <span class="p">{}</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="kt">Person</span><span class="o">&lt;</span><span class="kt">T1</span><span class="p">,</span> <span class="kt">T2</span><span class="o">&gt;</span> <span class="p">{}</span>
+<span class="c1">// Person&lt;Car, Dog&gt;的访问级别是fileprivate</span>
+<span class="kd">fileprivate</span> <span class="k">var</span> <span class="nv">p</span> <span class="o">=</span> <span class="kt">Person</span><span class="o">&lt;</span><span class="kt">Car</span><span class="p">,</span> <span class="kt">Dog</span><span class="o">&gt;</span><span class="p">()</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="成员嵌套类型">成员、嵌套类型</h2>
+
+<ul>
+  <li>类型的访问级别会影响成员(属性、方法、初始化器、下标)、嵌套类型的默认访问级别
+    <ul>
+      <li>一般情况下，类型为<code class="language-plaintext highlighter-rouge">private</code>或<code class="language-plaintext highlighter-rouge">fileprivate</code>，那么成员\嵌套类型默认也是<code class="language-plaintext highlighter-rouge">private</code>或<code class="language-plaintext highlighter-rouge">fileprivate</code></li>
+      <li>一般情况下，类型为<code class="language-plaintext highlighter-rouge">internal</code>或<code class="language-plaintext highlighter-rouge">public</code>，那么成员\嵌套类型默认是<code class="language-plaintext highlighter-rouge">internal</code></li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="kt">PublicClass</span> <span class="p">{</span>
+    <span class="kd">public</span> <span class="k">var</span> <span class="nv">p1</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1">// public</span>
+    <span class="k">var</span> <span class="nv">p2</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1">// internal</span>
+    <span class="kd">fileprivate</span> <span class="kd">func</span> <span class="nf">f1</span><span class="p">()</span> <span class="p">{}</span> <span class="c1">// fileprivate</span>
+    <span class="kd">private</span> <span class="kd">func</span> <span class="nf">f2</span><span class="p">()</span> <span class="p">{}</span> <span class="c1">// private</span>
+<span class="p">}</span>
+
+<span class="kd">class</span> <span class="kt">InternalClass</span> <span class="p">{</span> <span class="c1">// internal</span>
+    <span class="k">var</span> <span class="nv">p</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1">// internal</span>
+    <span class="kd">fileprivate</span> <span class="kd">func</span> <span class="nf">f1</span><span class="p">()</span> <span class="p">{}</span> <span class="c1">// fileprivate</span>
+    <span class="kd">private</span> <span class="kd">func</span> <span class="nf">f2</span><span class="p">()</span> <span class="p">{}</span> <span class="c1">// private</span>
+<span class="p">}</span>
+
+<span class="kd">fileprivate</span> <span class="kd">class</span> <span class="kt">FilePrivateClass</span> <span class="p">{</span> <span class="c1">// fileprivate</span>
+    <span class="kd">func</span> <span class="nf">f1</span><span class="p">()</span> <span class="p">{}</span> <span class="c1">// fileprivate</span>
+    <span class="kd">private</span> <span class="kd">func</span> <span class="nf">f2</span><span class="p">()</span> <span class="p">{}</span> <span class="c1">// private</span>
+<span class="p">}</span>
+
+<span class="kd">private</span> <span class="kd">class</span> <span class="kt">PrivateClass</span> <span class="p">{</span> <span class="c1">// private</span>
+    <span class="kd">func</span> <span class="nf">f</span><span class="p">()</span> <span class="p">{}</span> <span class="c1">// private</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="成员的重写">成员的重写</h2>
+
+<ul>
+  <li>子类重写成员的访问级别必须 ≥ 子类的访问级别，或者 ≥ 父类被重写成员的访问级别</li>
+  <li>父类的成员不能被成员作用域外定义的子类重写</li>
+</ul>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="kt">Person</span> <span class="p">{</span>
+    <span class="kd">private</span> <span class="k">var</span> <span class="nv">age</span><span class="p">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="p">}</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="kt">Student</span> <span class="p">:</span> <span class="kt">Person</span> <span class="p">{</span>
+    <span class="c1">//报错 ：Property does not override any property from its superclass</span>
+        <span class="k">override</span> <span class="k">var</span> <span class="nv">age</span><span class="p">:</span> <span class="kt">Int</span> <span class="p">{</span>
+            <span class="k">set</span> <span class="p">{}</span>
+            <span class="k">get</span> <span class="p">{</span><span class="mi">10</span><span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="kt">Person</span> <span class="p">{</span>
+    <span class="kd">private</span> <span class="k">var</span> <span class="nv">age</span><span class="p">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="kd">public</span> <span class="kd">class</span> <span class="kt">Student</span> <span class="p">:</span> <span class="kt">Person</span> <span class="p">{</span>
+        <span class="k">override</span> <span class="k">var</span> <span class="nv">age</span><span class="p">:</span> <span class="kt">Int</span> <span class="p">{</span>
+            <span class="k">set</span> <span class="p">{}</span>
+            <span class="k">get</span> <span class="p">{</span><span class="mi">10</span><span class="p">}</span> <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="下面代码能否编译通过">下面代码能否编译通过?</h2>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">private</span> <span class="kd">class</span> <span class="kt">Person</span> <span class="p">{}</span>
+<span class="kd">fileprivate</span> <span class="kd">class</span> <span class="kt">Student</span> <span class="p">:</span> <span class="kt">Person</span> <span class="p">{}</span>
+
+<span class="kd">private</span> <span class="kd">struct</span> <span class="kt">Dog</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="nv">age</span><span class="p">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="kd">func</span> <span class="nf">run</span><span class="p">()</span> <span class="p">{}</span>
+<span class="p">}</span>
+
+<span class="kd">fileprivate</span> <span class="kd">struct</span> <span class="kt">Person</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="nv">dog</span><span class="p">:</span> <span class="kt">Dog</span> <span class="o">=</span> <span class="kt">Dog</span><span class="p">()</span>
+    <span class="k">mutating</span> <span class="kd">func</span> <span class="nf">walk</span><span class="p">()</span> <span class="p">{</span>
+        <span class="n">dog</span><span class="o">.</span><span class="nf">run</span><span class="p">()</span>
+        <span class="n">dog</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">private</span> <span class="kd">struct</span> <span class="kt">Dog</span> <span class="p">{</span>
+    <span class="kd">private</span> <span class="k">var</span> <span class="nv">age</span><span class="p">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="kd">private</span> <span class="kd">func</span> <span class="nf">run</span><span class="p">()</span> <span class="p">{}</span>
+<span class="p">}</span>
+
+<span class="kd">fileprivate</span> <span class="kd">struct</span> <span class="kt">Person</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="nv">dog</span><span class="p">:</span> <span class="kt">Dog</span> <span class="o">=</span> <span class="kt">Dog</span><span class="p">()</span>
+    <span class="k">mutating</span> <span class="kd">func</span> <span class="nf">walk</span><span class="p">()</span> <span class="p">{</span>
+        <span class="n">dog</span><span class="o">.</span><span class="nf">run</span><span class="p">()</span>
+        <span class="n">dog</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>直接在全局作用域下定义的private等价于fileprivate</li>
+</ul>
+
+<hr />
+
+<h2 id="gettersetter">getter、setter</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">getter</code>、<code class="language-plaintext highlighter-rouge">setter</code>默认自动接收它们所属环境的访问级别</li>
+  <li>可以给<code class="language-plaintext highlighter-rouge">setter</code>单独设置一个比<code class="language-plaintext highlighter-rouge">getter</code>更低的访问级别，用以限制写的权限</li>
+</ul>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">fileprivate</span><span class="p">(</span><span class="k">set</span><span class="p">)</span> <span class="kd">public</span> <span class="k">var</span> <span class="nv">num</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="kd">class</span> <span class="kt">Person</span> <span class="p">{</span>
+    <span class="kd">private(set)</span> <span class="k">var</span> <span class="nv">age</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="nf">fileprivate</span><span class="p">(</span><span class="k">set</span><span class="p">)</span> <span class="kd">public</span> <span class="k">var</span> <span class="nv">weight</span><span class="p">:</span> <span class="kt">Int</span> <span class="p">{</span>
+        <span class="k">set</span> <span class="p">{}</span>
+        <span class="k">get</span> <span class="p">{</span> <span class="mi">10</span> <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="kd">internal(set)</span> <span class="kd">public</span> <span class="nf">subscript</span><span class="p">(</span><span class="nv">index</span><span class="p">:</span> <span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span> <span class="p">{</span>
+        <span class="k">set</span> <span class="p">{}</span>
+        <span class="k">get</span> <span class="p">{</span> <span class="n">index</span> <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="初始化器">初始化器</h2>
+
+<ul>
+  <li>如果一个<code class="language-plaintext highlighter-rouge">public类</code>想在另一个模块调用编译生成的默认无参初始化器，必须显式提供<code class="language-plaintext highlighter-rouge">public</code>的无参初始化器
+    <ul>
+      <li>因为<code class="language-plaintext highlighter-rouge">public类</code>的默认初始化器是<code class="language-plaintext highlighter-rouge">internal</code>级别</li>
+    </ul>
+  </li>
+  <li><code class="language-plaintext highlighter-rouge">required</code>初始化器 ≥ 它的默认访问级别</li>
+  <li>如果结构体有<code class="language-plaintext highlighter-rouge">private</code>、<code class="language-plaintext highlighter-rouge">fileprivate</code>的存储实例属性，那么它的<strong>成员</strong>初始化器也是<code class="language-plaintext highlighter-rouge">private</code>、<code class="language-plaintext highlighter-rouge">fileprivate</code></li>
+  <li>否则默认就是<code class="language-plaintext highlighter-rouge">internal</code></li>
+</ul>
+
+<hr />
+
+<h2 id="枚举类型的case">枚举类型的case</h2>
+
+<ul>
+  <li>不能给<code class="language-plaintext highlighter-rouge">enum</code>的每个<code class="language-plaintext highlighter-rouge">case</code>单独设置访问级别</li>
+  <li>每个<code class="language-plaintext highlighter-rouge">case</code>自动接收<code class="language-plaintext highlighter-rouge">enum</code>的访问级别</li>
+  <li><code class="language-plaintext highlighter-rouge">public enum</code>定义的<code class="language-plaintext highlighter-rouge">case</code>也是<code class="language-plaintext highlighter-rouge">public</code></li>
+</ul>
+
+<hr />
+
+<h2 id="协议">协议</h2>
+
+<ul>
+  <li>协议中定义的要求自动接收协议的访问级别，不能单独设置访问级别</li>
+  <li><code class="language-plaintext highlighter-rouge">public</code>协议定义的要求也是<code class="language-plaintext highlighter-rouge">public</code></li>
+  <li>协议实现的访问级别必须 ≥ 类型的访问级别，或者 ≥ 协议的访问级别</li>
+  <li>下面代码能编译通过么?</li>
+</ul>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">protocol</span> <span class="kt">Runnable</span> <span class="p">{</span>
+    <span class="kd">func</span> <span class="nf">run</span><span class="p">()</span>
+<span class="p">}</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="kt">Person</span> <span class="p">:</span> <span class="kt">Runnable</span> <span class="p">{</span>
+    <span class="kd">func</span> <span class="nf">run</span><span class="p">()</span> <span class="p">{}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="扩展">扩展</h2>
+
+<ul>
+  <li>如果有显式设置扩展的访问级别，扩展添加的成员自动接收扩展的访问级别</li>
+  <li>如果没有显式设置扩展的访问级别，扩展添加的成员的默认访问级别，跟直接在类型中定义的成员一样</li>
+  <li>可以单独给扩展添加的成员设置访问级别</li>
+  <li>不能给用于遵守协议的扩展显式设置扩展的访问级别</li>
+  <li>在同一文件中的扩展，可以写成类似多个部分的类型声明
+    <ul>
+      <li>在原本的声明中声明一个私有成员，可以在同一文件的扩展中访问它</li>
+      <li>在扩展中声明一个私有成员，可以在同一文件的其他扩展中、原本声明中访问它</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="kt">Person</span> <span class="p">{</span>
+    <span class="kd">private</span> <span class="kd">func</span> <span class="nf">run0</span><span class="p">()</span> <span class="p">{}</span>
+    <span class="kd">private</span> <span class="kd">func</span> <span class="nf">eat0</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nf">run1</span><span class="p">()</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">extension</span> <span class="kt">Person</span> <span class="p">{</span>
+    <span class="kd">private</span> <span class="kd">func</span> <span class="nf">run1</span><span class="p">()</span> <span class="p">{}</span>
+    <span class="kd">private</span> <span class="kd">func</span> <span class="nf">eat1</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nf">run0</span><span class="p">()</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">extension</span> <span class="kt">Person</span> <span class="p">{</span>
+    <span class="kd">private</span> <span class="kd">func</span> <span class="nf">eat2</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nf">run1</span><span class="p">()</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="将方法赋值给varlet">将方法赋值给var\let</h2>
+
+<ul>
+  <li>方法也可以像函数那样，赋值给一个<code class="language-plaintext highlighter-rouge">let</code>或者<code class="language-plaintext highlighter-rouge">var</code></li>
+</ul>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">struct</span> <span class="kt">Person</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="nv">age</span><span class="p">:</span> <span class="kt">Int</span>
+    <span class="kd">func</span> <span class="nf">run</span><span class="p">(</span><span class="n">_</span> <span class="nv">v</span><span class="p">:</span> <span class="kt">Int</span><span class="p">)</span> <span class="p">{</span> <span class="nf">print</span><span class="p">(</span><span class="s">"func run"</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="p">}</span>
+    <span class="kd">static</span> <span class="kd">func</span> <span class="nf">run</span><span class="p">(</span><span class="n">_</span> <span class="nv">v</span><span class="p">:</span> <span class="kt">Int</span><span class="p">)</span> <span class="p">{</span> <span class="nf">print</span><span class="p">(</span><span class="s">"static func run"</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">let</span> <span class="nv">fn1</span> <span class="o">=</span> <span class="kt">Person</span><span class="o">.</span><span class="n">run</span>
+<span class="nf">fn1</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="c1">// static func run 10</span>
+
+<span class="k">let</span> <span class="nv">fn2</span><span class="p">:</span> <span class="p">(</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">()</span> <span class="o">=</span> <span class="kt">Person</span><span class="o">.</span><span class="n">run</span>
+<span class="nf">fn2</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span> <span class="c1">// static func run 20</span>
+
+<span class="k">let</span> <span class="nv">fn3</span><span class="p">:</span> <span class="p">(</span><span class="kt">Person</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">((</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">())</span> <span class="o">=</span> <span class="kt">Person</span><span class="o">.</span><span class="n">run</span>
+<span class="nf">fn3</span><span class="p">(</span><span class="kt">Person</span><span class="p">(</span><span class="nv">age</span><span class="p">:</span> <span class="mi">18</span><span class="p">))(</span><span class="mi">30</span><span class="p">)</span> <span class="c1">// func run 18 30</span>
+</code></pre></div></div>
+
+:ET
