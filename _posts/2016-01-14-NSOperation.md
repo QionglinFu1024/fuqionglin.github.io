@@ -8,17 +8,17 @@ cover:
 tags: 多线程
 ---
 
-#### 初体验
+## 初体验
 
 * 执行步骤
     * 先将需要执行的操作封装到一个NSOperation对象中
     * 然后将NSOperation对象添加到NSOperationQueue中
     * 系统会自动将NSOperationQueue中的NSOperation取出来
     * 将取出的NSOperation封装的操作放到一条新的线程中执行
-   
 * NSInvocationOperation
- 
-<pre><code class="language-objectivec">- (void)demo1{
+
+```objc
+- (void)demo1{
     
     // 不能直接用 --- Invocation事务 () + queue = 把事务添加到队列 ---> 然后去执行
     NSInvocationOperation *op = [[NSInvocationOperation alloc] initWithTarget:self selector:@selector(xixihha) object:nil];
@@ -37,12 +37,14 @@ tags: 多线程
 - (void)xixihha{
     NSLog(@"123");
 }
+```
 
-</code></pre>
+
 
 * NSBlockOperation
 
-<pre><code class="language-objectivec">- (void)demo2{
+```objc
+- (void)demo2{
     
     // 操作优先级
     NSBlockOperation *op = [NSBlockOperation blockOperationWithBlock:^{
@@ -75,11 +77,14 @@ tags: 多线程
     
     
 }
-</code></pre>
+```
 
-#### 属性研究
 
-<pre><code class="language-objectivec">#import "ViewController.h"
+
+## 属性研究
+
+```objc
+#import "ViewController.h"
 
 @interface ViewController ()
 @property (nonatomic, strong) NSOperationQueue *queue;
@@ -173,20 +178,23 @@ tags: 多线程
 }
 
 @end
-</code></pre>
+```
 
-#### 缓存机制
+## 缓存机制
 
 * 首先加载内存，因为快
 * 在加载磁盘，找到以后保存到内存
 * 下载
 
-#### 自定义NSOperation
+## 自定义NSOperation
 
 * 非并发只需要实现main方法
 * 并发
 
-<pre><code class="language-objectivec">#import "KCWebImageDownloadOperation.h"
+
+
+```objc
+#import "KCWebImageDownloadOperation.h"
 #import "NSString+KCAdd.h"
 
 @interface KCWebImageDownloadOperation()
@@ -218,7 +226,7 @@ tags: 多线程
         _title = title;
     }
     return self;
-}
+    }
 
 - (void)start{
     /*
@@ -252,18 +260,18 @@ tags: 多线程
         }
         [_lock unlock];
     }
-}
+    }
 
 - (void)done{
     self.finished = YES;
     self.executing = NO;
-}
+    }
 
 /**
  取消操作的方法 --- 需要进行判断
  */
 - (void)cancel{
-    
+  
     [_lock lock];
     if (![self isCancelled]) {
         //关掉其他状态
@@ -277,7 +285,7 @@ tags: 多线程
         }
     }
     [_lock unlock];
-}
+  }
 
 #pragma mark - setter -- getter
 
@@ -286,7 +294,7 @@ tags: 多线程
     BOOL executing = _executing;
     [_lock unlock];
     return executing;
-}
+    }
 
 - (void)setFinished:(BOOL)finished {
     [_lock lock];
@@ -296,14 +304,14 @@ tags: 多线程
         [self didChangeValueForKey:@"isFinished"];
     }
     [_lock unlock];
-}
+    }
 
 - (BOOL)isFinished {
     [_lock lock];
     BOOL finished = _finished;
     [_lock unlock];
     return finished;
-}
+    }
 
 - (void)setCancelled:(BOOL)cancelled {
     [_lock lock];
@@ -313,20 +321,20 @@ tags: 多线程
         [self didChangeValueForKey:@"isCancelled"];
     }
     [_lock unlock];
-}
+    }
 
 - (BOOL)isCancelled {
     [_lock lock];
     BOOL cancelled = _cancelled;
     [_lock unlock];
     return cancelled;
-}
+    }
 - (BOOL)isConcurrent {
     return YES;
-}
+    }
 - (BOOL)isAsynchronous {
     return YES;
-}
+    }
 
 + (BOOL)automaticallyNotifiesObserversForKey:(NSString *)key {
     if ([key isEqualToString:@"isExecuting"] ||
@@ -336,13 +344,8 @@ tags: 多线程
     }
     //关闭自动监听
     return [super automaticallyNotifiesObserversForKey:key];
-}
-
-
+ }
 
 @end
-</code></pre>
-
-
-
+```
 

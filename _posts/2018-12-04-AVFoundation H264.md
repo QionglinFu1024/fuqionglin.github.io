@@ -1,7 +1,7 @@
 ---
 layout: post
-title: '直播架构、编码'
-subtitle: '编码、H264、直播'
+title: 'AVFoundation H264'
+subtitle: 'H264、直播'
 date: 2018-12-04
 categories: 技术
 cover: 

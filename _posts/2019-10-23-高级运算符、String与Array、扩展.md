@@ -1,11 +1,11 @@
 ---
 layout: post
-title: 'Swift5.0 (十四)'
+title: '高级运算符、String与Array、扩展'
 subtitle: '高级运算符、String与Array、扩展'
 date: 2019-10-23
 categories: 技术
 cover: 
-tags: Swift
+tags: Swift5.0
 
 
 ---
@@ -15,14 +15,14 @@ tags: Swift
 - 1个String变量占用多少内存?
 - 下面2个String变量，底层存储有什么不同?
 
-```
+```swift
 var str1 = "0123456789"
 var str2 = "0123456789ABCDEF"
 ```
 
 - 如果对String进行拼接操作， String变量的存储会发生什么变化?
 
-```
+```swift
 str1.append("ABCDE")
 str1.append("F")
 str2.append("G")
@@ -59,7 +59,7 @@ str2.append("G")
 
 ### 关于Array的思考
 
-```
+```swift
 public struct Array<Element>
 var arr = [1, 2, 3, 4]
 ```
@@ -83,7 +83,7 @@ var arr = [1, 2, 3, 4]
 
 - 类、结构体、枚举可以为现有的运算符提供自定义的实现，这个操作叫做:运算符重载
 
-```
+```swift
 struct Point {
     var x: Int, y: Int
 }
@@ -103,7 +103,7 @@ struct Point {
 }
 ```
 
-```
+```swift
 static func + (p1: Point, p2: Point) -> Point {
     Point(x: p1.x + p2.x, y: p1.y + p2.y)
 }
@@ -148,7 +148,7 @@ static func == (p1: Point, p2: Point) -> Bool {
   - 只拥有遵守 `Equatable` 协议存储属性的结构体
 - 引用类型比较存储的地址值是否相等(是否引用着同一个对象)，使用恒等运算符=== 、!==
 
-```
+```swift
 struct Point : Equatable {
     var x: Int, y: Int
 }
@@ -166,7 +166,7 @@ print(p1 != p2) // true
   - 遵守 Comparable 协议 
   - 重载相应的运算符
 
-```
+```swift
 // score大的比较大，若score相等，age小的比较大
 struct Student : Comparable {
     var age: Int
@@ -209,7 +209,7 @@ print(stu2 <= stu1) // true
 - Apple文档参考: [链接1](https://developer.apple.com/documentation/swift/swift_standard_library/operator_declarations) [链接2](https://docs.swift.org/swift- book/ReferenceManual/Declarations.html#ID380)
 - phttps://docs.swift.org/swift- book/ReferenceManual/Declarations.html#ID380
 
-```
+```swift
 prefix operator 前缀运算符
 postfix operator 后缀运算符
 infix operator 中缀运算符 : 优先级组
@@ -231,7 +231,7 @@ precedencegroup PlusMinusPrecedence {
 }
 ```
 
-```
+```swift
 struct Point {
     var x: Int, y: Int
     static prefix func +++ (point: inout Point) -> Point {
@@ -271,7 +271,7 @@ person?.point +- Point(x: 10, y: 20)
 
 ### 计算属性、下标、方法、嵌套类型
 
-```
+```swift
 extension Double {
     var km: Double { self * 1_000.0 }
     var m: Double { self }
@@ -321,7 +321,7 @@ extension Int {
   - 可以在扩展中编写自定义初始化器
 -  `required`初始化器也不能写在扩展中
 
-```
+```swift
 class Person {
     var age: Int
     var name: String
@@ -362,7 +362,7 @@ var p5 = Point(p4)
 - 如果一个类型已经实现了协议的所有要求，但是还没有声明它遵守了这个协议 
   - 可以通过扩展来让它遵守这个协议
 
-```
+```swift
 protocol TestProtocol {
     func test()
 }
@@ -376,7 +376,7 @@ extension TestClass : TestProtocol {}
 
 - 编写一个函数，判断一个整数是否为奇数?
 
-```
+```swift
 func isOdd<T: BinaryInteger>(_ i: T) -> Bool {
     i % 2 != 0
 }
@@ -389,7 +389,7 @@ extension BinaryInteger {
 - 扩展可以给协议提供默认实现，也间接实现『可选协议』的效果 
 -  扩展可以给协议扩充『协议中从未声明过的方法』
 
-```
+```swift
 protocol TestProtocol {
     func test1()
 }
@@ -429,7 +429,7 @@ cls2.test2() // TestProtocol test2
 
 ### 泛型
 
-```
+```swift
 class Stack<E> {
     var elements = [E]()
     func push(_ element: E) {
